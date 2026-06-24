@@ -19,10 +19,14 @@ export function buildAuthUser(
   supabaseUser: SupabaseUser,
   profile: Profile | null,
 ): AuthUser {
+  const metadata = (supabaseUser.user_metadata ?? {}) as Record<string, unknown>;
   const metadataName =
-    typeof supabaseUser.user_metadata?.name === "string"
-      ? supabaseUser.user_metadata.name
-      : undefined;
+    (typeof metadata.full_name === "string" && metadata.full_name) ||
+    (typeof metadata.name === "string" && metadata.name) ||
+    undefined;
+
+  const metadataAvatarUrl =
+    typeof metadata.avatar_url === "string" ? metadata.avatar_url : undefined;
 
   const email = profile?.email ?? supabaseUser.email ?? "";
   const name =
@@ -35,7 +39,7 @@ export function buildAuthUser(
     id: supabaseUser.id,
     email,
     name,
-    avatarUrl: profile?.avatarUrl,
+    avatarUrl: profile?.avatarUrl ?? metadataAvatarUrl,
     role: profile?.role ?? "member",
     createdAt: profile?.createdAt ?? supabaseUser.created_at,
   };

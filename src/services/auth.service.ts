@@ -35,7 +35,7 @@ async function buildAuthResult(
   supabaseSession: Parameters<typeof mapSupabaseSession>[0],
 ): Promise<ServiceResult<{ user: AuthUser; session: AuthSession }>> {
   try {
-    const profile = await profileService.getProfile(supabaseUser.id);
+    const profile = await profileService.ensureProfile(supabaseUser);
     const user = buildAuthUser(supabaseUser, profile);
     const session = mapSupabaseSession(supabaseSession);
     return success({ user, session });
@@ -69,6 +69,30 @@ export const authService = {
     }
 
     return buildAuthResult(data.user, data.session);
+  },
+
+  async loginWithGoogle(): Promise<ServiceResult<void>> {
+    const { client, error } = requireSupabaseClient();
+    if (!client || error) {
+      return failure(error!.error ?? SUPABASE_CONFIG_MESSAGE);
+    }
+
+    const { error: oauthError } = await client.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}${ROUTES.dashboard}`,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    });
+
+    if (oauthError) {
+      return failure(mapAuthError(oauthError));
+    }
+
+    return success(undefined);
   },
 
   async register(

@@ -1,5 +1,7 @@
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { z } from "zod";
 import { getSupabaseClient } from "@/lib/supabase";
+import { getProfileSeedFromAuthUser } from "./profile.utils";
 
 const profileRowSchema = z.object({
   id: z.string(),
@@ -23,6 +25,7 @@ type UpsertProfileInput = {
   id: string;
   email: string;
   name: string;
+  avatarUrl?: string;
   role?: "owner" | "admin" | "member";
 };
 
@@ -75,6 +78,7 @@ export const profileService = {
           id: input.id,
           email: input.email,
           name: input.name,
+          avatar_url: input.avatarUrl ?? null,
           role: input.role ?? "member",
         },
         { onConflict: "id" },
@@ -96,5 +100,22 @@ export const profileService = {
     }
 
     return mapProfile(parsed.data);
+  },
+
+  async ensureProfile(supabaseUser: SupabaseUser): Promise<Profile | null> {
+    const existing = await this.getProfile(supabaseUser.id);
+    if (existing) {
+      return existing;
+    }
+
+    if (!supabaseUser.email) {
+      return null;
+    }
+
+    try {
+      return await this.upsertProfile(getProfileSeedFromAuthUser(supabaseUser));
+    } catch {
+      return null;
+    }
   },
 };

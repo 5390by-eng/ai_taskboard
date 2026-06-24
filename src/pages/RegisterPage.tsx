@@ -5,7 +5,7 @@ import { useRegister } from "@/features/auth";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { registerSchema, type RegisterFormValues } from "@/lib/validators";
 import { ROUTES } from "@/lib/constants";
-import { SupabaseConfigBanner } from "@/components/auth";
+import { AuthSocialLogin } from "@/components/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
@@ -32,7 +32,7 @@ export function RegisterPage() {
         <CardDescription>Get started with AI Task Board</CardDescription>
       </CardHeader>
       <CardContent>
-        <SupabaseConfigBanner />
+        <AuthSocialLogin />
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => registerMutation.mutate(v))} className="space-y-4">
             <FormField

@@ -105,6 +105,20 @@ export function useResetPassword() {
   });
 }
 
+export function useGoogleLogin() {
+  return useMutation({
+    mutationFn: async () => {
+      const result = await authService.loginWithGoogle();
+      if (result.error) {
+        throw new Error(result.error);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
 export function useLogout() {
   const clearSession = useAuthStore((s) => s.clearSession);
   const setStatus = useAuthStore((s) => s.setStatus);
