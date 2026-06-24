@@ -1,0 +1,1 @@
+export { SupabaseConfigBanner } from "./SupabaseConfigBanner";

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { authService } from "@/services";
 import { useAuthStore } from "@/stores";
 import { ROUTES } from "@/lib/constants";
-import type { LoginCredentials, RegisterData } from "@/types";
+import type { LoginCredentials, RegisterData, ResetPasswordData } from "@/types";
 
 export function useLogin() {
   const setSession = useAuthStore((s) => s.setSession);
@@ -45,6 +45,12 @@ export function useRegister() {
       return result.data;
     },
     onSuccess: (data) => {
+      if (data.type === "email_confirmation") {
+        toast.success(`Check your email (${data.email}) to confirm your account`);
+        navigate(ROUTES.login);
+        return;
+      }
+
       setSession(data.user, data.session);
       setStatus("authenticated");
       toast.success("Account created successfully!");
@@ -67,6 +73,31 @@ export function useForgotPassword() {
     },
     onSuccess: () => {
       toast.success("If an account exists, a reset link has been sent.");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+export function useResetPassword() {
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const setStatus = useAuthStore((s) => s.setStatus);
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: async (data: ResetPasswordData) => {
+      const result = await authService.updatePassword(data);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
+    onSuccess: () => {
+      clearSession();
+      setStatus("unauthenticated");
+      toast.success("Password updated successfully. Please sign in.");
+      navigate(ROUTES.login);
     },
     onError: (error: Error) => {
       toast.error(error.message);

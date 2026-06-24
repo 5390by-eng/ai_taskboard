@@ -2,8 +2,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { useForgotPassword } from "@/features/auth";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from "@/lib/validators";
 import { ROUTES } from "@/lib/constants";
+import { SupabaseConfigBanner } from "@/components/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
@@ -30,6 +32,7 @@ export function ForgotPasswordPage() {
         <CardDescription>Enter your email to receive a reset link</CardDescription>
       </CardHeader>
       <CardContent>
+        <SupabaseConfigBanner />
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => forgotPassword.mutate(v))} className="space-y-4">
             <FormField
@@ -45,7 +48,7 @@ export function ForgotPasswordPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={forgotPassword.isPending}>
+            <Button type="submit" className="w-full" disabled={forgotPassword.isPending || !isSupabaseConfigured}>
               {forgotPassword.isPending ? "Sending..." : "Send reset link"}
             </Button>
           </form>

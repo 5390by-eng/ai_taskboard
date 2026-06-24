@@ -7,6 +7,7 @@ import {
   LoginPage,
   RegisterPage,
   ForgotPasswordPage,
+  ResetPasswordPage,
   DashboardPage,
   BoardsListPage,
   BoardDetailsPage,
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.login, element: <LoginPage /> },
       { path: ROUTES.register, element: <RegisterPage /> },
       { path: ROUTES.forgotPassword, element: <ForgotPasswordPage /> },
+      { path: ROUTES.resetPassword, element: <ResetPasswordPage /> },
     ],
   },
   {

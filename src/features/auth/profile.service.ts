@@ -62,10 +62,10 @@ export const profileService = {
     return mapProfile(parsed.data);
   },
 
-  async upsertProfile(input: UpsertProfileInput): Promise<Profile | null> {
+  async upsertProfile(input: UpsertProfileInput): Promise<Profile> {
     const client = getSupabaseClient();
     if (!client) {
-      return null;
+      throw new Error("Supabase client is not available");
     }
 
     const { data, error } = await client
@@ -82,13 +82,17 @@ export const profileService = {
       .select("*")
       .single();
 
-    if (error || !data) {
-      return null;
+    if (error) {
+      throw new Error(error.message || "Failed to save user profile");
+    }
+
+    if (!data) {
+      throw new Error("Failed to save user profile");
     }
 
     const parsed = profileRowSchema.safeParse(data);
     if (!parsed.success) {
-      return null;
+      throw new Error("Invalid profile data received from database");
     }
 
     return mapProfile(parsed.data);

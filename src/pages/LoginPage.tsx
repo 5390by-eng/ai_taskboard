@@ -2,8 +2,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { useLogin } from "@/features/auth";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { loginSchema, type LoginFormValues } from "@/lib/validators";
 import { ROUTES } from "@/lib/constants";
+import { SupabaseConfigBanner } from "@/components/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
@@ -30,6 +32,7 @@ export function LoginPage() {
         <CardDescription>Enter your credentials to access your account</CardDescription>
       </CardHeader>
       <CardContent>
+        <SupabaseConfigBanner />
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v) => login.mutate(v))} className="space-y-4">
             <FormField
@@ -63,7 +66,7 @@ export function LoginPage() {
                 Forgot password?
               </Link>
             </div>
-            <Button type="submit" className="w-full" disabled={login.isPending}>
+            <Button type="submit" className="w-full" disabled={login.isPending || !isSupabaseConfigured}>
               {login.isPending ? "Signing in..." : "Sign in"}
             </Button>
           </form>

@@ -51,6 +51,16 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
 
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 export const createTaskSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string(),
@@ -68,5 +78,6 @@ export const aiGenerateSchema = z.object({
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export type CreateTaskFormValues = z.infer<typeof createTaskSchema>;
 export type AiGenerateFormValues = z.infer<typeof aiGenerateSchema>;

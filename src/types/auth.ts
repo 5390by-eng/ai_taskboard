@@ -21,4 +21,13 @@ export type ForgotPasswordData = {
   email: string;
 };
 
+export type ResetPasswordData = {
+  password: string;
+  confirmPassword: string;
+};
+
+export type RegisterResult =
+  | { type: "session"; user: AuthUser; session: AuthSession }
+  | { type: "email_confirmation"; email: string };
+
 export type AuthUser = User;

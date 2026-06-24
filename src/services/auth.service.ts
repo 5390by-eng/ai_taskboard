@@ -4,12 +4,16 @@ import type {
   ForgotPasswordData,
   LoginCredentials,
   RegisterData,
+  RegisterResult,
+  ResetPasswordData,
   ServiceResult,
 } from "@/types";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { SUPABASE_CONFIG_MESSAGE } from "@/lib/env";
 import { buildAuthUser, mapSupabaseSession } from "@/features/auth/auth.mapper";
 import { mapAuthError } from "@/features/auth/auth.errors";
 import { profileService } from "@/features/auth/profile.service";
+import { ROUTES } from "@/lib/constants";
 import { failure, success } from "@/types/api";
 
 function requireSupabaseClient() {
@@ -18,7 +22,7 @@ function requireSupabaseClient() {
     return {
       client: null,
       error: failure<{ user: AuthUser; session: AuthSession }>(
-        "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        SUPABASE_CONFIG_MESSAGE,
       ),
     };
   }
@@ -69,10 +73,10 @@ export const authService = {
 
   async register(
     data: RegisterData,
-  ): Promise<ServiceResult<{ user: AuthUser; session: AuthSession }>> {
+  ): Promise<ServiceResult<RegisterResult>> {
     const { client, error } = requireSupabaseClient();
     if (!client || error) {
-      return error!;
+      return failure(error!.error ?? SUPABASE_CONFIG_MESSAGE);
     }
 
     const { data: signUpData, error: signUpError } = await client.auth.signUp({
@@ -80,6 +84,7 @@ export const authService = {
       password: data.password,
       options: {
         data: { name: data.name },
+        emailRedirectTo: `${window.location.origin}${ROUTES.login}`,
       },
     });
 
@@ -91,19 +96,39 @@ export const authService = {
       return failure("Registration failed");
     }
 
-    await profileService.upsertProfile({
-      id: signUpData.user.id,
-      email: data.email,
-      name: data.name,
-    });
-
-    if (signUpData.session) {
-      return buildAuthResult(signUpData.user, signUpData.session);
+    try {
+      await profileService.upsertProfile({
+        id: signUpData.user.id,
+        email: data.email,
+        name: data.name,
+      });
+    } catch (profileError) {
+      const message =
+        profileError instanceof Error
+          ? profileError.message
+          : "Failed to create user profile";
+      return failure(message);
     }
 
-    return this.login({
+    if (signUpData.session) {
+      const authResult = await buildAuthResult(
+        signUpData.user,
+        signUpData.session,
+      );
+      if (authResult.error || !authResult.data) {
+        return failure(authResult.error ?? "Registration failed");
+      }
+
+      return success({
+        type: "session",
+        user: authResult.data.user,
+        session: authResult.data.session,
+      });
+    }
+
+    return success({
+      type: "email_confirmation",
       email: data.email,
-      password: data.password,
     });
   },
 
@@ -112,14 +137,14 @@ export const authService = {
   ): Promise<ServiceResult<{ message: string }>> {
     const { client, error } = requireSupabaseClient();
     if (!client || error) {
-      return failure(error!.error ?? "Supabase is not configured");
+      return failure(error!.error ?? SUPABASE_CONFIG_MESSAGE);
     }
 
     if (!data.email) {
       return failure("Email is required");
     }
 
-    const redirectTo = `${window.location.origin}/reset-password`;
+    const redirectTo = `${window.location.origin}${ROUTES.resetPassword}`;
     const { error: resetError } = await client.auth.resetPasswordForEmail(
       data.email,
       { redirectTo },
@@ -134,10 +159,44 @@ export const authService = {
     });
   },
 
+  async updatePassword(
+    data: ResetPasswordData,
+  ): Promise<ServiceResult<{ message: string }>> {
+    const { client, error } = requireSupabaseClient();
+    if (!client || error) {
+      return failure(error!.error ?? SUPABASE_CONFIG_MESSAGE);
+    }
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await client.auth.getSession();
+
+    if (sessionError) {
+      return failure(mapAuthError(sessionError));
+    }
+
+    if (!session) {
+      return failure("Password reset link is invalid or has expired");
+    }
+
+    const { error: updateError } = await client.auth.updateUser({
+      password: data.password,
+    });
+
+    if (updateError) {
+      return failure(mapAuthError(updateError));
+    }
+
+    await client.auth.signOut();
+
+    return success({ message: "Password updated successfully" });
+  },
+
   async logout(): Promise<ServiceResult<{ message: string }>> {
     const { client, error } = requireSupabaseClient();
     if (!client || error) {
-      return failure(error!.error ?? "Supabase is not configured");
+      return failure(error!.error ?? SUPABASE_CONFIG_MESSAGE);
     }
 
     const { error: signOutError } = await client.auth.signOut();
