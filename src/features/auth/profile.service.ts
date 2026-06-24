@@ -1,6 +1,8 @@
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { z } from "zod";
 import { getSupabaseClient } from "@/lib/supabase";
+import { teamRoleSchema } from "@/lib/validators";
+import type { TeamRole, UserRole } from "@/types/user";
 import { getProfileSeedFromAuthUser } from "./profile.utils";
 
 const profileRowSchema = z.object({
@@ -9,6 +11,7 @@ const profileRowSchema = z.object({
   name: z.string(),
   avatar_url: z.string().nullable().optional(),
   role: z.enum(["owner", "admin", "member"]),
+  team_role: teamRoleSchema.nullable().optional(),
   created_at: z.string(),
 });
 
@@ -17,7 +20,8 @@ export type Profile = {
   email: string;
   name: string;
   avatarUrl?: string;
-  role: "owner" | "admin" | "member";
+  role: UserRole;
+  teamRole?: TeamRole;
   createdAt: string;
 };
 
@@ -26,7 +30,8 @@ type UpsertProfileInput = {
   email: string;
   name: string;
   avatarUrl?: string;
-  role?: "owner" | "admin" | "member";
+  role?: UserRole;
+  teamRole?: TeamRole;
 };
 
 function mapProfile(row: z.infer<typeof profileRowSchema>): Profile {
@@ -36,6 +41,7 @@ function mapProfile(row: z.infer<typeof profileRowSchema>): Profile {
     name: row.name,
     avatarUrl: row.avatar_url ?? undefined,
     role: row.role,
+    teamRole: row.team_role ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -80,6 +86,7 @@ export const profileService = {
           name: input.name,
           avatar_url: input.avatarUrl ?? null,
           role: input.role ?? "member",
+          team_role: input.teamRole ?? null,
         },
         { onConflict: "id" },
       )

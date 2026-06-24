@@ -3,8 +3,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { useRegister } from "@/features/auth";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { registerSchema, type RegisterFormValues } from "@/lib/validators";
-import { ROUTES } from "@/lib/constants";
+import { registerSchema, type RegisterFormInput, type RegisterFormValues } from "@/lib/validators";
+import { ROUTES, TEAM_ROLE_LABELS } from "@/lib/constants";
+import { TEAM_ROLES } from "@/types/user";
 import { AuthSocialLogin } from "@/components/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,13 +17,26 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 export function RegisterPage() {
   const registerMutation = useRegister();
-  const form = useForm<RegisterFormValues>({
+  const form = useForm<RegisterFormInput, unknown, RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: {
+      name: "",
+      email: "",
+      teamRole: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
   return (
@@ -44,6 +58,30 @@ export function RegisterPage() {
                   <FormControl>
                     <Input placeholder="Your name" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="teamRole"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Team role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TEAM_ROLES.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {TEAM_ROLE_LABELS[role]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

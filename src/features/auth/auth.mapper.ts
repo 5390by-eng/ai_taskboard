@@ -41,6 +41,7 @@ export function buildAuthUser(
     name,
     avatarUrl: profile?.avatarUrl ?? metadataAvatarUrl,
     role: profile?.role ?? "member",
+    teamRole: profile?.teamRole,
     createdAt: profile?.createdAt ?? supabaseUser.created_at,
   };
 

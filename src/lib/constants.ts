@@ -36,3 +36,13 @@ export const STATUS_LABELS = {
 } as const;
 
 export const APP_NAME = "AI Task Board";
+
+export const TEAM_ROLE_LABELS = {
+  frontend: "Frontend Developer",
+  backend: "Backend Developer",
+  fullstack: "Fullstack Developer",
+  qa: "QA Engineer",
+  ui_ux: "UI/UX Designer",
+  devops: "DevOps Engineer",
+  pm: "Project Manager",
+} as const;

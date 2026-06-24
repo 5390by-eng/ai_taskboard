@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TEAM_ROLES } from "@/types/user";
 
 export const taskSchema = z.object({
   id: z.string(),
@@ -21,12 +22,15 @@ export const boardSchema = z.object({
   updatedAt: z.string(),
 });
 
+export const teamRoleSchema = z.enum(TEAM_ROLES);
+
 export const userSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   name: z.string(),
   avatarUrl: z.string().optional(),
   role: z.enum(["owner", "admin", "member"]),
+  teamRole: teamRoleSchema.optional(),
   createdAt: z.string(),
 });
 
@@ -39,6 +43,11 @@ export const registerSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().email("Invalid email address"),
+    teamRole: z
+      .union([teamRoleSchema, z.literal("")])
+      .refine((value) => value !== "", {
+        message: "Please select your team role",
+      }),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string(),
   })
@@ -76,7 +85,8 @@ export const aiGenerateSchema = z.object({
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
-export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type RegisterFormInput = z.input<typeof registerSchema>;
+export type RegisterFormValues = z.output<typeof registerSchema>;
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export type CreateTaskFormValues = z.infer<typeof createTaskSchema>;

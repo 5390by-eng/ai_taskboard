@@ -1,4 +1,4 @@
-import type { User } from "./user";
+import type { TeamRole, User } from "./user";
 
 export type AuthSession = {
   accessToken: string;
@@ -15,6 +15,7 @@ export type RegisterData = {
   email: string;
   password: string;
   confirmPassword: string;
+  teamRole: TeamRole;
 };
 
 export type ForgotPasswordData = {

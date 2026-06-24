@@ -107,7 +107,7 @@ export const authService = {
       email: data.email,
       password: data.password,
       options: {
-        data: { name: data.name },
+        data: { name: data.name, team_role: data.teamRole },
         emailRedirectTo: `${window.location.origin}${ROUTES.login}`,
       },
     });
@@ -125,6 +125,7 @@ export const authService = {
         id: signUpData.user.id,
         email: data.email,
         name: data.name,
+        teamRole: data.teamRole,
       });
     } catch (profileError) {
       const message =
