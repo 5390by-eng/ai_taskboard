@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 type PromptInputProps = {
   onSend: (content: string) => void;
   disabled?: boolean;
+  placeholder?: string;
 };
 
-export function PromptInput({ onSend, disabled }: PromptInputProps) {
+export function PromptInput({
+  onSend,
+  disabled,
+  placeholder = "Ask anything about your tasks and boards...",
+}: PromptInputProps) {
   const [value, setValue] = useState("");
 
   const handleSend = () => {
@@ -28,7 +33,7 @@ export function PromptInput({ onSend, disabled }: PromptInputProps) {
   return (
     <div className="flex gap-2">
       <Textarea
-        placeholder="Ask anything about your tasks and boards..."
+        placeholder={placeholder}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}

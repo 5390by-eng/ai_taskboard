@@ -1,1 +1,1 @@
-export { useAiTaskGenerator, useAiChat } from "./useAi";
+export { useAiTaskGenerator, useBoardTaskPrompt, useAiChat } from "./useAi";

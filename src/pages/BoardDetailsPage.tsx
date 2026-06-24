@@ -12,6 +12,7 @@ import {
 } from "@/features/tasks";
 import { useTaskStore } from "@/stores";
 import { BoardHeader, BoardMembers, KanbanBoard } from "@/components/board";
+import { FloatingLiveChat } from "@/components/chat";
 import { CreateTaskModal, TaskDetailsPanel } from "@/components/tasks";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
@@ -110,6 +111,8 @@ export function BoardDetailsPage() {
         isSaving={localUpdateTask.isPending}
         isDeleting={localDeleteTask.isPending}
       />
+
+      <FloatingLiveChat boardId={id} members={members} />
     </div>
   );
 }
