@@ -8,7 +8,12 @@ type LoadingStateProps = {
 
 export function LoadingState({ message = "Loading...", className }: LoadingStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-3 py-12", className)}>
+    <div
+      className={cn(
+        "flex w-full flex-col items-center justify-center gap-3 py-12",
+        className,
+      )}
+    >
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       <p className="text-sm text-muted-foreground">{message}</p>
     </div>

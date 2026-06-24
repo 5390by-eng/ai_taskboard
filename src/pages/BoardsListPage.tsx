@@ -1,44 +1,51 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { LayoutGrid } from "lucide-react";
-import { useBoards, useCreateBoard } from "@/features/boards";
+import { useBoards } from "@/features/boards";
 import { ROUTES } from "@/lib/constants";
+import { queryKeys } from "@/lib/query-keys";
+import { currentMockUser } from "@/lib/mock-data/users";
+import { generateId } from "@/lib/utils";
+import { useBoardStore } from "@/stores";
+import type { Board } from "@/types";
+import type { CreateBoardFormValues } from "@/lib/validators";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateBoardCard } from "@/components/board/CreateBoardCard";
+import { CreateBoardModal } from "@/components/board/CreateBoardModal";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 
 export function BoardsListPage() {
+  const queryClient = useQueryClient();
+  const addBoard = useBoardStore((state) => state.addBoard);
   const { data: boards, isLoading, isError, refetch } = useBoards();
-  const createBoard = useCreateBoard();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCreate = () => {
-    if (!title.trim()) return;
-    createBoard.mutate(
-      { title, description },
-      {
-        onSuccess: () => {
-          setDialogOpen(false);
-          setTitle("");
-          setDescription("");
-        },
-      },
-    );
+  const handleCreateBoard = async (values: CreateBoardFormValues) => {
+    setIsCreating(true);
+
+    try {
+      const board: Board = {
+        id: generateId("board"),
+        title: values.title.trim(),
+        description: "",
+        ownerId: currentMockUser.id,
+        memberIds: values.memberIds,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      addBoard(board);
+      queryClient.setQueryData<Board[]>(queryKeys.boards.all, (currentBoards) => [
+        ...(currentBoards ?? []),
+        board,
+      ]);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   if (isLoading) return <LoadingState message="Loading boards..." />;
@@ -80,29 +87,12 @@ export function BoardsListPage() {
         </div>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Board</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={createBoard.isPending}>
-              {createBoard.isPending ? "Creating..." : "Create"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateBoardModal
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSubmit={handleCreateBoard}
+        isLoading={isCreating}
+      />
     </div>
   );
 }

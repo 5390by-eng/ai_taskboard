@@ -1,3 +1,4 @@
+import type { Session } from "@supabase/supabase-js";
 import type {
   AuthSession,
   AuthUser,
@@ -235,6 +236,16 @@ export const authService = {
     return success({ message: "Logged out successfully" });
   },
 
+  async applySession(
+    session: Session | null,
+  ): Promise<ServiceResult<{ user: AuthUser; session: AuthSession } | null>> {
+    if (!session?.user) {
+      return success(null);
+    }
+
+    return buildAuthResult(session.user, session);
+  },
+
   async getSession(): Promise<
     ServiceResult<{ user: AuthUser; session: AuthSession } | null>
   > {
@@ -256,10 +267,6 @@ export const authService = {
       return failure(mapAuthError(error));
     }
 
-    if (!session?.user) {
-      return success(null);
-    }
-
-    return buildAuthResult(session.user, session);
+    return this.applySession(session);
   },
 };

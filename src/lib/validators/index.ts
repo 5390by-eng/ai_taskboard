@@ -78,6 +78,11 @@ export const createTaskSchema = z.object({
   status: z.enum(["backlog", "todo", "in_progress", "review", "done"]).optional(),
 });
 
+export const createBoardSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  memberIds: z.array(z.string()).min(1, "Select at least one member"),
+});
+
 export const aiGenerateSchema = z.object({
   projectDescription: z
     .string()
@@ -90,4 +95,5 @@ export type RegisterFormValues = z.output<typeof registerSchema>;
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export type CreateTaskFormValues = z.infer<typeof createTaskSchema>;
+export type CreateBoardFormValues = z.infer<typeof createBoardSchema>;
 export type AiGenerateFormValues = z.infer<typeof aiGenerateSchema>;

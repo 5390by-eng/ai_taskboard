@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { authService } from "@/services";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 import { useAuthStore } from "@/stores";
@@ -7,23 +8,30 @@ type AuthProviderProps = {
   children: React.ReactNode;
 };
 
-async function syncAuthState(): Promise<void> {
+async function applyAuthSession(session: Session | null): Promise<boolean> {
   const setSession = useAuthStore.getState().setSession;
   const clearSession = useAuthStore.getState().clearSession;
 
-  const result = await authService.getSession();
+  const result = await authService.applySession(session);
 
   if (result.error) {
     clearSession();
-    return;
+    return false;
   }
 
   if (result.data) {
     setSession(result.data.user, result.data.session);
-    return;
+    return true;
   }
 
   clearSession();
+  return false;
+}
+
+function resolveAuthStatus(hasSession: boolean): void {
+  useAuthStore
+    .getState()
+    .setStatus(hasSession ? "authenticated" : "unauthenticated");
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -45,10 +53,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const bootstrap = async () => {
       setStatus("loading");
-      await syncAuthState();
-      if (isMounted) {
-        const { session } = useAuthStore.getState();
-        setStatus(session ? "authenticated" : "unauthenticated");
+
+      try {
+        const result = await authService.getSession();
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (result.error) {
+          useAuthStore.getState().clearSession();
+          resolveAuthStatus(false);
+          return;
+        }
+
+        if (result.data) {
+          useAuthStore.getState().setSession(result.data.user, result.data.session);
+          resolveAuthStatus(true);
+          return;
+        }
+
+        useAuthStore.getState().clearSession();
+        resolveAuthStatus(false);
+      } catch {
+        if (isMounted) {
+          useAuthStore.getState().clearSession();
+          resolveAuthStatus(false);
+        }
       }
     };
 
@@ -56,19 +87,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange(async (event, session) => {
+    } = client.auth.onAuthStateChange((event, session) => {
       if (!isMounted) {
         return;
       }
 
-      if (event === "SIGNED_OUT" || !session) {
-        useAuthStore.getState().clearSession();
-        setStatus("unauthenticated");
-        return;
-      }
+      // Avoid calling Supabase auth methods inside this callback directly —
+      // it can deadlock bootstrap getSession().
+      window.setTimeout(() => {
+        if (!isMounted) {
+          return;
+        }
 
-      await syncAuthState();
-      setStatus("authenticated");
+        void (async () => {
+          if (event === "SIGNED_OUT" || !session) {
+            useAuthStore.getState().clearSession();
+            resolveAuthStatus(false);
+            return;
+          }
+
+          try {
+            const hasSession = await applyAuthSession(session);
+            if (isMounted) {
+              resolveAuthStatus(hasSession);
+            }
+          } catch {
+            if (isMounted) {
+              useAuthStore.getState().clearSession();
+              resolveAuthStatus(false);
+            }
+          }
+        })();
+      }, 0);
     });
 
     return () => {
