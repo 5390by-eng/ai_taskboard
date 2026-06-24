@@ -3,15 +3,17 @@ import type { Task, TaskStatus } from "@/types";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { AssigneeLookup } from "@/lib/assignee";
 
 type BoardColumnProps = {
   id: TaskStatus;
   title: string;
   tasks: Task[];
+  members: AssigneeLookup[];
   onTaskClick: (task: Task) => void;
 };
 
-export function BoardColumn({ id, title, tasks, onTaskClick }: BoardColumnProps) {
+export function BoardColumn({ id, title, tasks, members, onTaskClick }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
@@ -33,6 +35,7 @@ export function BoardColumn({ id, title, tasks, onTaskClick }: BoardColumnProps)
           <TaskCard
             key={task.id}
             task={task}
+            members={members}
             onClick={() => onTaskClick(task)}
           />
         ))}

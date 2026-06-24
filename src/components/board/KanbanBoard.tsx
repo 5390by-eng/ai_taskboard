@@ -12,14 +12,16 @@ import type { Task, TaskStatus } from "@/types";
 import { BOARD_COLUMNS } from "@/lib/constants";
 import { BoardColumn } from "./BoardColumn";
 import { TaskCard } from "@/components/tasks/TaskCard";
+import type { AssigneeLookup } from "@/lib/assignee";
 
 type KanbanBoardProps = {
   tasks: Task[];
+  members: AssigneeLookup[];
   onMoveTask: (taskId: string, status: TaskStatus, previousStatus: TaskStatus) => void;
   onTaskClick: (task: Task) => void;
 };
 
-export function KanbanBoard({ tasks, onMoveTask, onTaskClick }: KanbanBoardProps) {
+export function KanbanBoard({ tasks, members, onMoveTask, onTaskClick }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
@@ -63,12 +65,13 @@ export function KanbanBoard({ tasks, onMoveTask, onTaskClick }: KanbanBoardProps
             id={col.id}
             title={col.title}
             tasks={tasksByColumn[col.id]}
+            members={members}
             onTaskClick={onTaskClick}
           />
         ))}
       </div>
       <DragOverlay>
-        {activeTask && <TaskCard task={activeTask} isDragging />}
+        {activeTask && <TaskCard task={activeTask} members={members} isDragging />}
       </DragOverlay>
     </DndContext>
   );

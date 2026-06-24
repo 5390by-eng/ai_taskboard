@@ -4,27 +4,24 @@ import type { Task } from "@/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PriorityBadge } from "./PriorityBadge";
-import { mockUsers } from "@/lib/mock-data/users";
+import { findAssignee, getNameInitials, type AssigneeLookup } from "@/lib/assignee";
 import { cn } from "@/lib/utils";
 
 type TaskCardProps = {
   task: Task;
+  members?: AssigneeLookup[];
   onClick?: () => void;
   isDragging?: boolean;
 };
 
-export function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
+export function TaskCard({ task, members = [], onClick, isDragging }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.id,
     data: { task },
   });
 
-  const assignee = mockUsers.find((u) => u.id === task.assigneeId);
-  const initials = assignee?.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2) ?? "?";
+  const assignee = findAssignee(task.assigneeId, members);
+  const initials = assignee ? getNameInitials(assignee.name) : "?";
 
   const style = transform
     ? { transform: CSS.Translate.toString(transform) }

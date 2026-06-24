@@ -26,13 +26,15 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { createTaskSchema, type CreateTaskFormValues } from "@/lib/validators";
-import { mockUsers } from "@/lib/mock-data/users";
+import type { AssigneeLookup } from "@/lib/assignee";
 import type { TaskPriority } from "@/types";
 
 type CreateTaskModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: CreateTaskFormValues) => void;
+  members: AssigneeLookup[];
+  membersLoading?: boolean;
   isLoading?: boolean;
 };
 
@@ -40,6 +42,8 @@ export function CreateTaskModal({
   open,
   onOpenChange,
   onSubmit,
+  members,
+  membersLoading = false,
   isLoading,
 }: CreateTaskModalProps) {
   const form = useForm<CreateTaskFormValues>({
@@ -121,16 +125,28 @@ export function CreateTaskModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assignee</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={membersLoading || members.length === 0}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select assignee" />
+                        <SelectValue
+                          placeholder={
+                            membersLoading
+                              ? "Loading members..."
+                              : members.length === 0
+                                ? "No board members"
+                                : "Select assignee"
+                          }
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {mockUsers.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
+                      {members.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

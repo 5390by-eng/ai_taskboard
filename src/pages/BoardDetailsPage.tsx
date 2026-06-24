@@ -62,6 +62,7 @@ export function BoardDetailsPage() {
 
       <KanbanBoard
         tasks={tasks}
+        members={members}
         onMoveTask={handleMoveTask}
         onTaskClick={handleTaskClick}
       />
@@ -70,11 +71,14 @@ export function BoardDetailsPage() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSubmit={handleCreateTask}
+        members={members}
+        membersLoading={membersLoading}
         isLoading={createTask.isPending}
       />
 
       <TaskDetailsPanel
         task={selectedTask}
+        members={members}
         open={panelOpen}
         onOpenChange={setPanelOpen}
       />
