@@ -120,19 +120,21 @@ export const authService = {
       return failure("Registration failed");
     }
 
-    try {
-      await profileService.upsertProfile({
-        id: signUpData.user.id,
-        email: data.email,
-        name: data.name,
-        teamRole: data.teamRole,
-      });
-    } catch (profileError) {
-      const message =
-        profileError instanceof Error
-          ? profileError.message
-          : "Failed to create user profile";
-      return failure(message);
+    if (signUpData.session) {
+      try {
+        await profileService.upsertProfile({
+          id: signUpData.user.id,
+          email: data.email,
+          name: data.name,
+          teamRole: data.teamRole,
+        });
+      } catch (profileError) {
+        const message =
+          profileError instanceof Error
+            ? profileError.message
+            : "Failed to create user profile";
+        return failure(message);
+      }
     }
 
     if (signUpData.session) {

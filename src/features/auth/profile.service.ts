@@ -77,19 +77,21 @@ export const profileService = {
       throw new Error("Supabase client is not available");
     }
 
+    const row: Record<string, string | null> = {
+      id: input.id,
+      email: input.email,
+      name: input.name,
+      avatar_url: input.avatarUrl ?? null,
+      role: input.role ?? "member",
+    };
+
+    if (input.teamRole !== undefined) {
+      row.team_role = input.teamRole;
+    }
+
     const { data, error } = await client
       .from("profiles")
-      .upsert(
-        {
-          id: input.id,
-          email: input.email,
-          name: input.name,
-          avatar_url: input.avatarUrl ?? null,
-          role: input.role ?? "member",
-          team_role: input.teamRole ?? null,
-        },
-        { onConflict: "id" },
-      )
+      .upsert(row, { onConflict: "id" })
       .select("*")
       .single();
 
