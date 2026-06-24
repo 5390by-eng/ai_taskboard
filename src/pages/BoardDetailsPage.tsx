@@ -75,7 +75,7 @@ export function BoardDetailsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
-        <BoardHeader board={board} members={members} />
+        <BoardHeader board={board} />
         <Button onClick={() => setCreateOpen(true)}>
           <Plus />
           Add Task

@@ -1,6 +1,8 @@
 import { Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Profile } from "@/features/auth/profile.service";
+import { getNameInitials } from "@/lib/assignee";
+import { cn } from "@/lib/utils";
 
 type BoardMembersProps = {
   members: Profile[];
@@ -8,19 +10,31 @@ type BoardMembersProps = {
   isError?: boolean;
 };
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+function MemberChip({ member }: { member: Profile }) {
+  const isOwner = member.role === "owner";
+
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border bg-background px-2 py-1">
+      <Avatar className="h-6 w-6">
+        {member.avatarUrl ? <AvatarImage src={member.avatarUrl} alt={member.name} /> : null}
+        <AvatarFallback
+          className={cn(
+            "text-[10px] font-medium uppercase",
+            isOwner ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground",
+          )}
+        >
+          {getNameInitials(member.name)}
+        </AvatarFallback>
+      </Avatar>
+      <span className="text-sm text-foreground">{member.name}</span>
+    </div>
+  );
 }
 
 export function BoardMembers({ members, isLoading, isError }: BoardMembersProps) {
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border px-4 py-3 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         Loading members...
       </div>
@@ -29,9 +43,7 @@ export function BoardMembers({ members, isLoading, isError }: BoardMembersProps)
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-destructive/30 px-4 py-3 text-sm text-destructive">
-        Failed to load board members
-      </div>
+      <p className="text-sm text-destructive">Failed to load board members</p>
     );
   }
 
@@ -40,20 +52,11 @@ export function BoardMembers({ members, isLoading, isError }: BoardMembersProps)
   }
 
   return (
-    <div className="rounded-lg border p-4">
-      <h2 className="mb-3 text-sm font-medium">Members ({members.length})</h2>
-      <div className="space-y-2">
+    <div>
+      <p className="mb-2 text-sm text-muted-foreground">Members ({members.length})</p>
+      <div className="flex flex-wrap gap-2">
         {members.map((member) => (
-          <div key={member.id} className="flex items-center gap-3 py-1">
-            <Avatar className="h-8 w-8">
-              {member.avatarUrl ? <AvatarImage src={member.avatarUrl} alt={member.name} /> : null}
-              <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{member.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{member.email}</p>
-            </div>
-          </div>
+          <MemberChip key={member.id} member={member} />
         ))}
       </div>
     </div>
