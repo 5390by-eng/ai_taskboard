@@ -4,8 +4,15 @@ import type { Task } from "@/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PriorityBadge } from "./PriorityBadge";
-import { findAssignee, getAssigneeDisplayName, getNameInitials, type AssigneeLookup } from "@/lib/assignee";
+import {
+  findAssignees,
+  getNameInitials,
+  normalizeTaskAssignees,
+  type AssigneeLookup,
+} from "@/lib/assignee";
 import { cn } from "@/lib/utils";
+
+const MAX_VISIBLE_ASSIGNEES = 3;
 
 type TaskCardProps = {
   task: Task;
@@ -20,9 +27,10 @@ export function TaskCard({ task, members = [], onClick, isDragging }: TaskCardPr
     data: { task },
   });
 
-  const assignee = findAssignee(task.assigneeId, members);
-  const assigneeLabel = getAssigneeDisplayName(task.assigneeId, members);
-  const initials = assignee ? getNameInitials(assignee.name) : "?";
+  const assigneeIds = normalizeTaskAssignees(task);
+  const assignees = findAssignees(assigneeIds, members);
+  const visibleAssignees = assignees.slice(0, MAX_VISIBLE_ASSIGNEES);
+  const hiddenAssigneeCount = assignees.length - visibleAssignees.length;
 
   const style = transform
     ? { transform: CSS.Translate.toString(transform) }
@@ -52,14 +60,20 @@ export function TaskCard({ task, members = [], onClick, isDragging }: TaskCardPr
             {task.description}
           </p>
         )}
-        {task.assigneeId && (
-          <div className="flex items-center gap-2">
-            {assignee ? (
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-              </Avatar>
-            ) : null}
-            <span className="text-xs text-muted-foreground">{assigneeLabel}</span>
+        {assignees.length > 0 && (
+          <div className="flex items-center gap-1">
+            <div className="flex -space-x-2">
+              {visibleAssignees.map((assignee) => (
+                <Avatar key={assignee.id} className="h-6 w-6 border-2 border-background">
+                  <AvatarFallback className="text-[10px]">
+                    {getNameInitials(assignee.name)}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+            {hiddenAssigneeCount > 0 && (
+              <span className="text-xs text-muted-foreground">+{hiddenAssigneeCount}</span>
+            )}
           </div>
         )}
       </CardContent>

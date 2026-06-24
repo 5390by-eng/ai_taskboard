@@ -1,8 +1,12 @@
+import type { Task } from "@/types";
+
 export type AssigneeLookup = {
   id: string;
   name: string;
   avatarUrl?: string;
 };
+
+type TaskWithAssignees = Pick<Task, "assigneeId" | "assigneeIds">;
 
 function normalizeAssigneeId(id: string): string {
   return id.trim().toLowerCase();
@@ -35,6 +39,37 @@ export function getAssigneeDisplayName(
   }
 
   return findAssignee(assigneeId, members)?.name ?? "Unknown member";
+}
+
+export function normalizeTaskAssignees(task: TaskWithAssignees): string[] {
+  if (task.assigneeIds && task.assigneeIds.length > 0) {
+    return [...new Set(task.assigneeIds)];
+  }
+
+  if (task.assigneeId) {
+    return [task.assigneeId];
+  }
+
+  return [];
+}
+
+export function findAssignees(
+  assigneeIds: string[],
+  members: AssigneeLookup[],
+): AssigneeLookup[] {
+  return assigneeIds.flatMap((assigneeId) => {
+    const assignee = findAssignee(assigneeId, members);
+    return assignee ? [assignee] : [];
+  });
+}
+
+export function withNormalizedAssignees<T extends TaskWithAssignees>(task: T): T {
+  const assigneeIds = normalizeTaskAssignees(task);
+  return {
+    ...task,
+    assigneeIds,
+    assigneeId: assigneeIds[0],
+  };
 }
 
 export function getNameInitials(name: string): string {

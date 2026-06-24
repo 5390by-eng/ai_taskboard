@@ -3,7 +3,13 @@ import { useParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useBoard } from "@/features/boards";
 import { useBoardMembers } from "@/features/users";
-import { useTasks, useCreateTask, useMoveTask } from "@/features/tasks";
+import {
+  useTasks,
+  useCreateTask,
+  useMoveTask,
+  useLocalUpdateTask,
+  useLocalDeleteTask,
+} from "@/features/tasks";
 import { useTaskStore } from "@/stores";
 import { BoardHeader, BoardMembers, KanbanBoard } from "@/components/board";
 import { CreateTaskModal, TaskDetailsPanel } from "@/components/tasks";
@@ -11,7 +17,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import type { Task, TaskStatus } from "@/types";
-import type { CreateTaskFormValues } from "@/lib/validators";
+import type { CreateTaskFormValues, UpdateTaskLocalFormValues } from "@/lib/validators";
 
 export function BoardDetailsPage() {
   const { id = "" } = useParams<{ id: string }>();
@@ -24,6 +30,8 @@ export function BoardDetailsPage() {
   const { isLoading: tasksLoading, isError: tasksError } = useTasks(id);
   const createTask = useCreateTask(id);
   const moveTask = useMoveTask(id);
+  const localUpdateTask = useLocalUpdateTask(id);
+  const localDeleteTask = useLocalDeleteTask(id);
   const tasks = useTaskStore((s) => s.tasksByBoard[id] ?? []);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -44,6 +52,19 @@ export function BoardDetailsPage() {
 
   const handleCreateTask = (values: CreateTaskFormValues) => {
     createTask.mutate(values);
+  };
+
+  const handleSaveTask = (taskId: string, values: UpdateTaskLocalFormValues) => {
+    localUpdateTask.mutate({ taskId, input: values });
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    localDeleteTask.mutate(taskId, {
+      onSuccess: () => {
+        setPanelOpen(false);
+        setSelectedTaskId(null);
+      },
+    });
   };
 
   if (boardLoading || tasksLoading) return <LoadingState message="Loading board..." />;
@@ -84,6 +105,10 @@ export function BoardDetailsPage() {
         members={members}
         open={panelOpen}
         onOpenChange={setPanelOpen}
+        onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+        isSaving={localUpdateTask.isPending}
+        isDeleting={localDeleteTask.isPending}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+import { withNormalizedAssignees } from "@/lib/assignee";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tasksService } from "@/services";
 import { queryKeys } from "@/lib/query-keys";
@@ -13,14 +14,8 @@ export function useTasks(boardId: string) {
     queryFn: async () => {
       const result = await tasksService.listByBoard(boardId);
       if (result.error || !result.data) throw new Error(result.error ?? "Failed to load tasks");
-      const previousTasks = useTaskStore.getState().tasksByBoard[boardId] ?? [];
-      const previousById = new Map(previousTasks.map((task) => [task.id, task]));
-      const mergedTasks = result.data.map((task) => ({
-        ...task,
-        assigneeId: task.assigneeId ?? previousById.get(task.id)?.assigneeId,
-      }));
-      setTasks(boardId, mergedTasks);
-      return mergedTasks;
+      setTasks(boardId, result.data);
+      return useTaskStore.getState().tasksByBoard[boardId] ?? [];
     },
     enabled: !!boardId,
   });
@@ -38,10 +33,11 @@ export function useCreateTask(boardId: string) {
       return result.data;
     },
     onSuccess: (task, input) => {
-      const normalizedTask: typeof task = {
+      const normalizedTask = withNormalizedAssignees({
         ...task,
         assigneeId: task.assigneeId ?? input.assigneeId,
-      };
+        assigneeIds: input.assigneeId ? [input.assigneeId] : [],
+      });
       const existingTasks = useTaskStore.getState().tasksByBoard[boardId] ?? [];
       if (existingTasks.some((existingTask) => existingTask.id === normalizedTask.id)) {
         updateTask(boardId, normalizedTask);

@@ -15,8 +15,13 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   assigneeId?: string;
+  assigneeIds?: string[];
   createdAt: string;
 };
+
+export type UpdateTaskLocalInput = Partial<
+  Pick<Task, "title" | "priority" | "assigneeIds">
+>;
 
 export type CreateTaskInput = {
   boardId: string;
