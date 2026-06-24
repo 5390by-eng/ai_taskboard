@@ -84,9 +84,17 @@ export function TaskDetailsPanel({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [addAssigneeValue, setAddAssigneeValue] = useState("");
 
-  const validationSchema = useMemo(
-    () => createUpdateTaskLocalSchema(members.map((member) => member.id)),
+  const memberIdsKey = useMemo(
+    () => members.map((member) => member.id).sort().join(","),
     [members],
+  );
+
+  const validationSchema = useMemo(
+    () =>
+      createUpdateTaskLocalSchema(
+        memberIdsKey.length > 0 ? memberIdsKey.split(",") : [],
+      ),
+    [memberIdsKey],
   );
 
   const form = useForm<UpdateTaskLocalFormValues>({
@@ -99,7 +107,7 @@ export function TaskDetailsPanel({
       form.reset(getDefaultValues(task));
       setAddAssigneeValue("");
     }
-  }, [task, open, form]);
+  }, [task?.id, open, form.reset]);
 
   if (!task) return null;
 

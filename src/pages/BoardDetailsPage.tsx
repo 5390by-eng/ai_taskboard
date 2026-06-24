@@ -18,22 +18,28 @@ import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import type { Task, TaskStatus } from "@/types";
+import type { Profile } from "@/features/auth/profile.service";
 import type { CreateTaskFormValues, UpdateTaskLocalFormValues } from "@/lib/validators";
+
+const EMPTY_MEMBERS: Profile[] = [];
+
+const EMPTY_TASKS: Task[] = [];
 
 export function BoardDetailsPage() {
   const { id = "" } = useParams<{ id: string }>();
   const { data: board, isLoading: boardLoading, isError: boardError, refetch } = useBoard(id);
   const {
-    data: members = [],
+    data: membersData,
     isLoading: membersLoading,
     isError: membersError,
   } = useBoardMembers(id);
+  const members = membersData ?? EMPTY_MEMBERS;
   const { isLoading: tasksLoading, isError: tasksError } = useTasks(id);
   const createTask = useCreateTask(id);
   const moveTask = useMoveTask(id);
   const localUpdateTask = useLocalUpdateTask(id);
   const localDeleteTask = useLocalDeleteTask(id);
-  const tasks = useTaskStore((s) => s.tasksByBoard[id] ?? []);
+  const tasks = useTaskStore((s) => s.tasksByBoard[id] ?? EMPTY_TASKS);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -68,7 +74,9 @@ export function BoardDetailsPage() {
     });
   };
 
-  if (boardLoading || tasksLoading) return <LoadingState message="Loading board..." />;
+  if (boardLoading || tasksLoading || membersLoading) {
+    return <LoadingState message="Loading board..." />;
+  }
   if (boardError || tasksError || !board) {
     return <ErrorState message="Board not found" onRetry={() => refetch()} />;
   }

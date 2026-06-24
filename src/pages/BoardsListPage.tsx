@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { LayoutGrid } from "lucide-react";
 import { useBoards, useCreateBoard } from "@/features/boards";
-import { ROUTES } from "@/lib/constants";
+import { useBoardMemberProfilesMap } from "@/features/boards";
 import type { CreateBoardFormValues } from "@/lib/validators";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BoardCard } from "@/components/board/BoardCard";
 import { CreateBoardCard } from "@/components/board/CreateBoardCard";
 import { CreateBoardModal } from "@/components/board/CreateBoardModal";
 import { LoadingState } from "@/components/LoadingState";
@@ -13,6 +12,7 @@ import { EmptyState } from "@/components/EmptyState";
 
 export function BoardsListPage() {
   const { data: boards, isLoading, isError, refetch } = useBoards();
+  const { profilesById } = useBoardMemberProfilesMap(boards);
   const createBoard = useCreateBoard();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -44,21 +44,14 @@ export function BoardsListPage() {
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {boards?.map((board) => (
-            <Link key={board.id} to={ROUTES.boardDetails(board.id)}>
-              <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader>
-                  <CardTitle>{board.title}</CardTitle>
-                  <CardDescription>{board.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground">
-                    {board.memberIds.length} members
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {boards?.map((board) => {
+            const members = board.memberIds.flatMap((memberId) => {
+              const profile = profilesById.get(memberId);
+              return profile ? [profile] : [];
+            });
+
+            return <BoardCard key={board.id} board={board} members={members} />;
+          })}
           <CreateBoardCard onClick={() => setDialogOpen(true)} />
         </div>
       )}

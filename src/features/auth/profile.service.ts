@@ -181,4 +181,30 @@ export const profileService = {
       return parsed.success ? [mapProfile(parsed.data)] : [];
     });
   },
+
+  async getProfilesByIds(userIds: string[]): Promise<Profile[]> {
+    const uniqueIds = [...new Set(userIds)];
+    if (uniqueIds.length === 0) {
+      return [];
+    }
+
+    const client = getSupabaseClient();
+    if (!client) {
+      return [];
+    }
+
+    const { data, error } = await client
+      .from("profiles")
+      .select("*")
+      .in("id", uniqueIds);
+
+    if (error) {
+      throw new Error(error.message || "Failed to load profiles");
+    }
+
+    return (data ?? []).flatMap((row: unknown) => {
+      const parsed = profileRowSchema.safeParse(row);
+      return parsed.success ? [mapProfile(parsed.data)] : [];
+    });
+  },
 };

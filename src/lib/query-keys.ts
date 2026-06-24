@@ -24,5 +24,6 @@ export const queryKeys = {
   profiles: {
     search: (query: string) => ["profiles", "search", query] as const,
     byBoard: (boardId: string) => ["profiles", "board", boardId] as const,
+    byIds: (idsKey: string) => ["profiles", "ids", idsKey] as const,
   },
 } as const;

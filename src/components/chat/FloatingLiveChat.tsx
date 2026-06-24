@@ -34,10 +34,9 @@ export function FloatingLiveChat({ boardId, members = [] }: FloatingLiveChatProp
   const isBusy = isGenerating || isCreating;
 
   useEffect(() => {
-    if (isOpen) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [preview, isOpen, isGenerating]);
+    if (!isOpen) return;
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [preview.length, isOpen, isGenerating]);
 
   const handleGenerate = () => {
     const trimmed = prompt.trim();

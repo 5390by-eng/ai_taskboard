@@ -66,7 +66,7 @@ export function CreateTaskModal({
         assigneeId: undefined,
       });
     }
-  }, [open, form]);
+  }, [open, form.reset]);
 
   const handleSubmit = (values: CreateTaskFormValues) => {
     onSubmit({
