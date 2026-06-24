@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useBoard } from "@/features/boards";
+import { useBoardMembers } from "@/features/users";
 import { useTasks, useCreateTask, useMoveTask } from "@/features/tasks";
 import { useTaskStore } from "@/stores";
-import { BoardHeader, KanbanBoard } from "@/components/board";
+import { BoardHeader, BoardMembers, KanbanBoard } from "@/components/board";
 import { CreateTaskModal, TaskDetailsPanel } from "@/components/tasks";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
@@ -15,6 +16,11 @@ import type { CreateTaskFormValues } from "@/lib/validators";
 export function BoardDetailsPage() {
   const { id = "" } = useParams<{ id: string }>();
   const { data: board, isLoading: boardLoading, isError: boardError, refetch } = useBoard(id);
+  const {
+    data: members = [],
+    isLoading: membersLoading,
+    isError: membersError,
+  } = useBoardMembers(id);
   const { isLoading: tasksLoading, isError: tasksError } = useTasks(id);
   const createTask = useCreateTask(id);
   const moveTask = useMoveTask(id);
@@ -44,13 +50,15 @@ export function BoardDetailsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between">
-        <BoardHeader board={board} />
+      <div className="flex items-start justify-between gap-4">
+        <BoardHeader board={board} members={members} />
         <Button onClick={() => setCreateOpen(true)}>
           <Plus />
           Add Task
         </Button>
       </div>
+
+      <BoardMembers members={members} isLoading={membersLoading} isError={membersError} />
 
       <KanbanBoard
         tasks={tasks}

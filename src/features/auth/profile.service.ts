@@ -157,4 +157,28 @@ export const profileService = {
       return parsed.success ? [mapProfile(parsed.data)] : [];
     });
   },
+
+  async getBoardMemberProfiles(boardId: string): Promise<Profile[]> {
+    const client = getSupabaseClient();
+    if (!client) {
+      return [];
+    }
+
+    const { data, error } = await client.rpc("get_board_member_profiles", {
+      p_board_id: boardId,
+    });
+
+    if (error) {
+      throw new Error(error.message || "Failed to load board members");
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    return data.flatMap((row: unknown) => {
+      const parsed = profileRowSchema.safeParse(row);
+      return parsed.success ? [mapProfile(parsed.data)] : [];
+    });
+  },
 };
