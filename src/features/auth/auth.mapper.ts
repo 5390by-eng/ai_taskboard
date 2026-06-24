@@ -1,0 +1,49 @@
+import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { userSchema } from "@/lib/validators";
+import type { AuthSession, AuthUser } from "@/types";
+import type { Profile } from "./profile.service";
+
+export function mapSupabaseSession(session: Session): AuthSession {
+  const expiresAt =
+    session.expires_at != null
+      ? new Date(session.expires_at * 1000).toISOString()
+      : new Date(Date.now() + 3600 * 1000).toISOString();
+
+  return {
+    accessToken: session.access_token,
+    expiresAt,
+  };
+}
+
+export function buildAuthUser(
+  supabaseUser: SupabaseUser,
+  profile: Profile | null,
+): AuthUser {
+  const metadataName =
+    typeof supabaseUser.user_metadata?.name === "string"
+      ? supabaseUser.user_metadata.name
+      : undefined;
+
+  const email = profile?.email ?? supabaseUser.email ?? "";
+  const name =
+    profile?.name ??
+    metadataName ??
+    email.split("@")[0] ??
+    "User";
+
+  const user: AuthUser = {
+    id: supabaseUser.id,
+    email,
+    name,
+    avatarUrl: profile?.avatarUrl,
+    role: profile?.role ?? "member",
+    createdAt: profile?.createdAt ?? supabaseUser.created_at,
+  };
+
+  const parsed = userSchema.safeParse(user);
+  if (!parsed.success) {
+    throw new Error("Invalid user data received from authentication provider");
+  }
+
+  return parsed.data;
+}

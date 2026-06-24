@@ -1,0 +1,61 @@
+---
+alwaysApply: true
+---
+
+# Frontend rules
+
+## Stack
+- React + TypeScript.
+- Supabase client только во frontend-слое, без бизнес-логики в UI-компонентах.
+- Все типы данных описывать явно: Task, User, Board, PaymentPlan, ChatMessage.
+
+## Architecture
+- components/ — только UI.
+- features/ — логика фич: tasks, ai-chat, telegram, billing, board.
+- lib/ — supabase client, helpers, shared utils.
+- hooks/ — reusable React hooks.
+- types/ — общие TypeScript-типы.
+
+## TypeScript
+- Не использовать any.
+- Все props типизировать.
+- API/Supabase responses валидировать перед использованием.
+- Не хранить сырые Supabase-ответы в UI-state, маппить в frontend-модели.
+
+## React
+- Компоненты должны быть маленькими и отвечать за одну задачу.
+- Не писать fetch/Supabase-запросы внутри UI-компонентов.
+- Для загрузки, ошибок и empty-state всегда делать отдельные состояния.
+- Формы должны иметь client-side validation.
+
+## Tasks / Board
+- Задача должна иметь минимум: id, title, description, status, assigneeId, priority, createdAt.
+- Drag-and-drop должен обновлять только статус/позицию задачи.
+- Оптимистичные обновления разрешены, но обязательно с rollback при ошибке.
+
+## AI features
+- AI не должен напрямую менять UI-state без подтверждения пользователя.
+- Результат AI-разбиения показывать как preview перед созданием задач.
+- Назначение задач пользователям через AI всегда должно быть редактируемым.
+- AI chat по продукту должен показывать loading, error и историю сообщений.
+
+## Telegram tasks
+- Задачи из Telegram отображать как draft/inbox перед добавлением на board.
+- Пользователь должен подтвердить или отредактировать задачу перед созданием.
+
+## Payments
+- Не хранить платежные данные на frontend.
+- Показывать только статус подписки, тариф и ограничения.
+- Все платежные действия выполнять через backend/edge functions.
+
+## Security
+- Не класть service role keys во frontend.
+- Использовать только public anon key.
+- Проверять права доступа на уровне Supabase RLS/backend.
+- Не доверять данным с клиента.
+
+## UI
+- Интерфейс должен быть быстрым, понятным и похожим на task board.
+- Все destructive actions требуют подтверждения.
+- Для long-running AI действий показывать progress/loading state.
+- Использовать единый дизайн кнопок, модалок, карточек и статусов.
