@@ -80,7 +80,7 @@ export const createTaskSchema = z.object({
 
 export const createBoardSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  memberIds: z.array(z.string()).min(1, "Select at least one member"),
+  memberIds: z.array(z.string()),
 });
 
 export const aiGenerateSchema = z.object({

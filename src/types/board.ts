@@ -18,5 +18,6 @@ export type Board = {
 
 export type CreateBoardInput = {
   title: string;
-  description: string;
+  description?: string;
+  memberIds: string[];
 };

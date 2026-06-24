@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { useState } from "react";
+import { Loader2, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -21,13 +22,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createBoardSchema, type CreateBoardFormValues } from "@/lib/validators";
-import { currentMockUser, mockUsers } from "@/lib/mock-data/users";
+import { useSearchProfilesByEmail } from "@/features/users";
+import type { Profile } from "@/features/auth/profile.service";
 import { cn } from "@/lib/utils";
 
 type CreateBoardModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: CreateBoardFormValues) => void;
+  onSubmit: (values: CreateBoardFormValues) => void | Promise<void>;
   isLoading?: boolean;
 };
 
@@ -46,48 +48,66 @@ export function CreateBoardModal({
   onSubmit,
   isLoading,
 }: CreateBoardModalProps) {
+  const [emailQuery, setEmailQuery] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<Profile[]>([]);
+  const { data: searchResults = [], isFetching, isError } = useSearchProfilesByEmail(emailQuery);
+
   const form = useForm<CreateBoardFormValues>({
     resolver: zodResolver(createBoardSchema),
     defaultValues: {
       title: "",
-      memberIds: [currentMockUser.id],
+      memberIds: [],
     },
   });
 
   const selectedMemberIds = form.watch("memberIds");
+  const availableResults = searchResults.filter(
+    (profile) => !selectedMemberIds.includes(profile.id),
+  );
+
+  const resetFormState = () => {
+    form.reset({
+      title: "",
+      memberIds: [],
+    });
+    setEmailQuery("");
+    setSelectedMembers([]);
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      form.reset({
-        title: "",
-        memberIds: [currentMockUser.id],
-      });
+      resetFormState();
     }
     onOpenChange(nextOpen);
   };
 
-  const handleSubmit = (values: CreateBoardFormValues) => {
-    onSubmit(values);
-    form.reset({
-      title: "",
-      memberIds: [currentMockUser.id],
-    });
-    onOpenChange(false);
+  const handleSubmit = async (values: CreateBoardFormValues) => {
+    try {
+      await onSubmit(values);
+      resetFormState();
+      onOpenChange(false);
+    } catch {
+      // Keep modal open so the user can retry.
+    }
   };
 
-  const toggleMember = (userId: string) => {
-    const current = form.getValues("memberIds");
-    const next = current.includes(userId)
-      ? current.filter((id) => id !== userId)
-      : [...current, userId];
-    form.setValue("memberIds", next, { shouldValidate: true });
+  const addMember = (profile: Profile) => {
+    if (selectedMemberIds.includes(profile.id)) {
+      return;
+    }
+
+    setSelectedMembers((current) => [...current, profile]);
+    form.setValue("memberIds", [...selectedMemberIds, profile.id], {
+      shouldValidate: true,
+    });
+    setEmailQuery("");
   };
 
   const removeMember = (userId: string) => {
-    const current = form.getValues("memberIds");
+    setSelectedMembers((current) => current.filter((member) => member.id !== userId));
     form.setValue(
       "memberIds",
-      current.filter((id) => id !== userId),
+      selectedMemberIds.filter((id) => id !== userId),
       { shouldValidate: true },
     );
   };
@@ -120,65 +140,90 @@ export function CreateBoardModal({
               render={() => (
                 <FormItem>
                   <FormLabel>Members</FormLabel>
-                  {selectedMemberIds.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedMemberIds.map((memberId) => {
-                        const member = mockUsers.find((user) => user.id === memberId);
-                        if (!member) return null;
+                  <p className="text-xs text-muted-foreground">
+                    Search registered users by email. You will be added as the board owner
+                    automatically.
+                  </p>
 
-                        return (
-                          <Badge
-                            key={member.id}
-                            variant="secondary"
-                            className="gap-1 pr-1"
+                  {selectedMembers.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedMembers.map((member) => (
+                        <Badge
+                          key={member.id}
+                          variant="secondary"
+                          className="gap-1 pr-1"
+                        >
+                          {member.name}
+                          <button
+                            type="button"
+                            className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                            onClick={() => removeMember(member.id)}
+                            aria-label={`Remove ${member.name}`}
                           >
-                            {member.name}
-                            <button
-                              type="button"
-                              className="ml-1 rounded-full p-0.5 hover:bg-muted"
-                              onClick={() => removeMember(member.id)}
-                              aria-label={`Remove ${member.name}`}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        );
-                      })}
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
                     </div>
                   )}
-                  <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border p-2">
-                    {mockUsers.map((user) => {
-                      const isSelected = selectedMemberIds.includes(user.id);
 
-                      return (
-                        <label
-                          key={user.id}
-                          className={cn(
-                            "flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-muted/50",
-                            isSelected && "bg-muted/50",
-                          )}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleMember(user.id)}
-                            className="h-4 w-4 rounded border-input"
-                          />
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {getInitials(user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{user.name}</p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {user.email}
-                            </p>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <FormControl>
+                    <Input
+                      value={emailQuery}
+                      onChange={(event) => setEmailQuery(event.target.value)}
+                      placeholder="Search by email"
+                      autoComplete="off"
+                    />
+                  </FormControl>
+
+                  {emailQuery.trim().length >= 2 && (
+                    <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border p-2">
+                      {isFetching ? (
+                        <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Searching users...
+                        </div>
+                      ) : isError ? (
+                        <p className="py-4 text-center text-sm text-destructive">
+                          Failed to search users
+                        </p>
+                      ) : availableResults.length === 0 ? (
+                        <p className="py-4 text-center text-sm text-muted-foreground">
+                          No registered users found
+                        </p>
+                      ) : (
+                        availableResults.map((profile) => (
+                          <button
+                            key={profile.id}
+                            type="button"
+                            onClick={() => addMember(profile)}
+                            className={cn(
+                              "flex w-full items-center gap-3 rounded-md p-2 text-left hover:bg-muted/50",
+                            )}
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">
+                                {getInitials(profile.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">{profile.name}</p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {profile.email}
+                              </p>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {emailQuery.trim().length > 0 && emailQuery.trim().length < 2 && (
+                    <p className="text-xs text-muted-foreground">
+                      Enter at least 2 characters to search
+                    </p>
+                  )}
+
                   <FormMessage />
                 </FormItem>
               )}
@@ -189,6 +234,7 @@ export function CreateBoardModal({
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
+                disabled={isLoading}
               >
                 Cancel
               </Button>

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { boardsService } from "@/services";
 import { queryKeys } from "@/lib/query-keys";
 import { useBoardStore } from "@/stores";
@@ -51,6 +52,10 @@ export function useCreateBoard() {
     onSuccess: (board) => {
       addBoard(board);
       queryClient.invalidateQueries({ queryKey: queryKeys.boards.all });
+      toast.success("Board created");
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 }

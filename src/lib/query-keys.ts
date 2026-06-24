@@ -21,4 +21,7 @@ export const queryKeys = {
   ai: {
     preview: ["ai", "preview"] as const,
   },
+  profiles: {
+    search: (query: string) => ["profiles", "search", query] as const,
+  },
 } as const;

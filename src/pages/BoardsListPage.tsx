@@ -1,14 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import { LayoutGrid } from "lucide-react";
-import { useBoards } from "@/features/boards";
+import { useBoards, useCreateBoard } from "@/features/boards";
 import { ROUTES } from "@/lib/constants";
-import { queryKeys } from "@/lib/query-keys";
-import { currentMockUser } from "@/lib/mock-data/users";
-import { generateId } from "@/lib/utils";
-import { useBoardStore } from "@/stores";
-import type { Board } from "@/types";
 import type { CreateBoardFormValues } from "@/lib/validators";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateBoardCard } from "@/components/board/CreateBoardCard";
@@ -18,34 +12,16 @@ import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
 
 export function BoardsListPage() {
-  const queryClient = useQueryClient();
-  const addBoard = useBoardStore((state) => state.addBoard);
   const { data: boards, isLoading, isError, refetch } = useBoards();
+  const createBoard = useCreateBoard();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateBoard = async (values: CreateBoardFormValues) => {
-    setIsCreating(true);
-
-    try {
-      const board: Board = {
-        id: generateId("board"),
-        title: values.title.trim(),
-        description: "",
-        ownerId: currentMockUser.id,
-        memberIds: values.memberIds,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      addBoard(board);
-      queryClient.setQueryData<Board[]>(queryKeys.boards.all, (currentBoards) => [
-        ...(currentBoards ?? []),
-        board,
-      ]);
-    } finally {
-      setIsCreating(false);
-    }
+    await createBoard.mutateAsync({
+      title: values.title.trim(),
+      description: "",
+      memberIds: values.memberIds,
+    });
   };
 
   if (isLoading) return <LoadingState message="Loading boards..." />;
@@ -91,7 +67,7 @@ export function BoardsListPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={handleCreateBoard}
-        isLoading={isCreating}
+        isLoading={createBoard.isPending}
       />
     </div>
   );

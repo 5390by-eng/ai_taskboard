@@ -127,4 +127,34 @@ export const profileService = {
       return null;
     }
   },
+
+  async searchProfilesByEmail(query: string, limit = 10): Promise<Profile[]> {
+    const client = getSupabaseClient();
+    if (!client) {
+      return [];
+    }
+
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < 2) {
+      return [];
+    }
+
+    const { data, error } = await client.rpc("search_profiles_by_email", {
+      p_query: trimmedQuery,
+      p_limit: limit,
+    });
+
+    if (error) {
+      throw new Error(error.message || "Failed to search users");
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    return data.flatMap((row: unknown) => {
+      const parsed = profileRowSchema.safeParse(row);
+      return parsed.success ? [mapProfile(parsed.data)] : [];
+    });
+  },
 };
