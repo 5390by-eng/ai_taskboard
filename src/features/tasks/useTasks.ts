@@ -13,8 +13,14 @@ export function useTasks(boardId: string) {
     queryFn: async () => {
       const result = await tasksService.listByBoard(boardId);
       if (result.error || !result.data) throw new Error(result.error ?? "Failed to load tasks");
-      setTasks(boardId, result.data);
-      return result.data;
+      const previousTasks = useTaskStore.getState().tasksByBoard[boardId] ?? [];
+      const previousById = new Map(previousTasks.map((task) => [task.id, task]));
+      const mergedTasks = result.data.map((task) => ({
+        ...task,
+        assigneeId: task.assigneeId ?? previousById.get(task.id)?.assigneeId,
+      }));
+      setTasks(boardId, mergedTasks);
+      return mergedTasks;
     },
     enabled: !!boardId,
   });
@@ -23,6 +29,7 @@ export function useTasks(boardId: string) {
 export function useCreateTask(boardId: string) {
   const queryClient = useQueryClient();
   const addTask = useTaskStore((s) => s.addTask);
+  const updateTask = useTaskStore((s) => s.updateTask);
 
   return useMutation({
     mutationFn: async (input: Omit<CreateTaskInput, "boardId">) => {
@@ -30,8 +37,17 @@ export function useCreateTask(boardId: string) {
       if (result.error || !result.data) throw new Error(result.error ?? "Failed to create task");
       return result.data;
     },
-    onSuccess: (task) => {
-      addTask(boardId, task);
+    onSuccess: (task, input) => {
+      const normalizedTask: typeof task = {
+        ...task,
+        assigneeId: task.assigneeId ?? input.assigneeId,
+      };
+      const existingTasks = useTaskStore.getState().tasksByBoard[boardId] ?? [];
+      if (existingTasks.some((existingTask) => existingTask.id === normalizedTask.id)) {
+        updateTask(boardId, normalizedTask);
+      } else {
+        addTask(boardId, normalizedTask);
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.byBoard(boardId) });
       toast.success("Task created");
     },

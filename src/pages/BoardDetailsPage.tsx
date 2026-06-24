@@ -27,11 +27,14 @@ export function BoardDetailsPage() {
   const tasks = useTaskStore((s) => s.tasksByBoard[id] ?? []);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const selectedTask = selectedTaskId
+    ? tasks.find((task) => task.id === selectedTaskId) ?? null
+    : null;
 
   const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
+    setSelectedTaskId(task.id);
     setPanelOpen(true);
   };
 

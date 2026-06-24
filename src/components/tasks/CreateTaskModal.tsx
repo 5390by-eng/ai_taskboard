@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -52,11 +53,26 @@ export function CreateTaskModal({
       title: "",
       description: "",
       priority: "medium",
+      assigneeId: undefined,
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        title: "",
+        description: "",
+        priority: "medium",
+        assigneeId: undefined,
+      });
+    }
+  }, [open, form]);
+
   const handleSubmit = (values: CreateTaskFormValues) => {
-    onSubmit(values);
+    onSubmit({
+      ...values,
+      assigneeId: values.assigneeId || undefined,
+    });
     form.reset();
     onOpenChange(false);
   };
@@ -126,8 +142,8 @@ export function CreateTaskModal({
                 <FormItem>
                   <FormLabel>Assignee</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
+                    onValueChange={(value) => field.onChange(value || undefined)}
+                    value={field.value ?? ""}
                     disabled={membersLoading || members.length === 0}
                   >
                     <FormControl>

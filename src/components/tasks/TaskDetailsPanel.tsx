@@ -7,7 +7,12 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { PriorityBadge, StatusBadge } from "./PriorityBadge";
-import { findAssignee, getNameInitials, type AssigneeLookup } from "@/lib/assignee";
+import {
+  findAssignee,
+  getAssigneeDisplayName,
+  getNameInitials,
+  type AssigneeLookup,
+} from "@/lib/assignee";
 import { formatDate } from "@/lib/utils";
 import type { Task } from "@/types";
 
@@ -27,6 +32,7 @@ export function TaskDetailsPanel({
   if (!task) return null;
 
   const assignee = findAssignee(task.assigneeId, members);
+  const assigneeLabel = getAssigneeDisplayName(task.assigneeId, members);
   const initials = assignee ? getNameInitials(assignee.name) : "?";
 
   return (
@@ -45,17 +51,17 @@ export function TaskDetailsPanel({
             <h4 className="text-sm font-medium mb-1">Description</h4>
             <p className="text-sm text-muted-foreground">{task.description || "No description"}</p>
           </div>
-          {assignee && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Assignee</h4>
-              <div className="flex items-center gap-2">
+          <div>
+            <h4 className="text-sm font-medium mb-2">Assignee</h4>
+            <div className="flex items-center gap-2">
+              {assignee ? (
                 <Avatar className="h-8 w-8">
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
-                <span className="text-sm">{assignee.name}</span>
-              </div>
+              ) : null}
+              <span className="text-sm">{assigneeLabel}</span>
             </div>
-          )}
+          </div>
           <div>
             <h4 className="text-sm font-medium mb-1">Created</h4>
             <p className="text-sm text-muted-foreground">{formatDate(task.createdAt)}</p>

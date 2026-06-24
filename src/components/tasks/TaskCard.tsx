@@ -4,7 +4,7 @@ import type { Task } from "@/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PriorityBadge } from "./PriorityBadge";
-import { findAssignee, getNameInitials, type AssigneeLookup } from "@/lib/assignee";
+import { findAssignee, getAssigneeDisplayName, getNameInitials, type AssigneeLookup } from "@/lib/assignee";
 import { cn } from "@/lib/utils";
 
 type TaskCardProps = {
@@ -21,6 +21,7 @@ export function TaskCard({ task, members = [], onClick, isDragging }: TaskCardPr
   });
 
   const assignee = findAssignee(task.assigneeId, members);
+  const assigneeLabel = getAssigneeDisplayName(task.assigneeId, members);
   const initials = assignee ? getNameInitials(assignee.name) : "?";
 
   const style = transform
@@ -51,10 +52,15 @@ export function TaskCard({ task, members = [], onClick, isDragging }: TaskCardPr
             {task.description}
           </p>
         )}
-        {assignee && (
-          <Avatar className="h-6 w-6">
-            <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-          </Avatar>
+        {task.assigneeId && (
+          <div className="flex items-center gap-2">
+            {assignee ? (
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+              </Avatar>
+            ) : null}
+            <span className="text-xs text-muted-foreground">{assigneeLabel}</span>
+          </div>
         )}
       </CardContent>
     </Card>
