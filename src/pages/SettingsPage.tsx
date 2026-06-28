@@ -1,14 +1,66 @@
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthStore } from "@/stores";
+import { useUpdateProfileSettings, useUpdateTelegramUsername } from "@/features/auth";
 import { mockUsers } from "@/lib/mock-data/users";
+import { TEAM_ROLE_LABELS } from "@/lib/constants";
+import {
+  settingsProfileSchema,
+  telegramUsernameSchema,
+  type SettingsProfileFormInput,
+  type SettingsProfileFormValues,
+} from "@/lib/validators";
+import { TEAM_ROLES } from "@/types/user";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function SettingsProfilePage() {
   const user = useAuthStore((s) => s.user);
+  const updateProfile = useUpdateProfileSettings();
+
+  const form = useForm<SettingsProfileFormInput, unknown, SettingsProfileFormValues>({
+    resolver: zodResolver(settingsProfileSchema),
+    defaultValues: {
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      teamRole: user?.teamRole ?? "",
+    },
+  });
+
+  useEffect(() => {
+    form.reset({
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      teamRole: user?.teamRole ?? "",
+    });
+  }, [user, form]);
+
+  function handleSaveProfile(values: SettingsProfileFormValues) {
+    updateProfile.mutate({
+      name: values.name,
+      teamRole: values.teamRole,
+    });
+  }
 
   return (
     <Card>
@@ -16,16 +68,64 @@ export function SettingsProfilePage() {
         <CardTitle>Profile</CardTitle>
         <CardDescription>Update your personal information</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" defaultValue={user?.name} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" defaultValue={user?.email} />
-        </div>
-        <Button>Save Changes</Button>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSaveProfile)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="you@example.com" disabled {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="teamRole"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Team role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TEAM_ROLES.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {TEAM_ROLE_LABELS[role]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={updateProfile.isPending}>
+              {updateProfile.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
@@ -82,7 +182,92 @@ export function SettingsNotificationsPage() {
   );
 }
 
+function TelegramIntegrationCard() {
+  const user = useAuthStore((s) => s.user);
+  const updateTelegramUsername = useUpdateTelegramUsername();
+  const savedUsername = user?.telegramUsername ?? "";
+  const hasSavedUsername = savedUsername.length > 0;
+
+  const [username, setUsername] = useState(savedUsername);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUsername(savedUsername);
+    setError(null);
+  }, [savedUsername]);
+
+  function handleSaveTelegramUsername() {
+    const parsed = telegramUsernameSchema.safeParse(username);
+
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Invalid Telegram username");
+      return;
+    }
+
+    updateTelegramUsername.mutate(parsed.data, {
+      onSuccess: () => {
+        setError(null);
+      },
+      onError: (mutationError) => {
+        setError(mutationError.message);
+      },
+    });
+  }
+
+  return (
+    <div className="space-y-4 border rounded-lg p-4">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="font-medium">Telegram</p>
+          <p className="text-sm text-muted-foreground">Receive tasks from Telegram bot</p>
+        </div>
+        <Badge variant={hasSavedUsername ? "default" : "secondary"}>
+          {hasSavedUsername ? "Connected" : "Not connected"}
+        </Badge>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="telegram-username">Telegram username</Label>
+        <Input
+          id="telegram-username"
+          placeholder="@username"
+          value={username}
+          onChange={(event) => {
+            setUsername(event.target.value);
+            if (error) {
+              setError(null);
+            }
+          }}
+        />
+        {hasSavedUsername && (
+          <p className="text-sm text-muted-foreground">
+            Current: @{savedUsername}
+          </p>
+        )}
+        {error && <p className="text-sm text-destructive">{error}</p>}
+      </div>
+
+      <Button
+        type="button"
+        onClick={handleSaveTelegramUsername}
+        disabled={updateTelegramUsername.isPending}
+      >
+        {updateTelegramUsername.isPending
+          ? "Saving..."
+          : hasSavedUsername
+            ? "Update"
+            : "Add"}
+      </Button>
+    </div>
+  );
+}
+
 export function SettingsIntegrationsPage() {
+  const otherIntegrations = [
+    { name: "Supabase", status: "Not configured", description: "Backend database and auth" },
+    { name: "Stripe", status: "Coming soon", description: "Payment processing" },
+  ] as const;
+
   return (
     <Card>
       <CardHeader>
@@ -90,17 +275,14 @@ export function SettingsIntegrationsPage() {
         <CardDescription>Connect external services</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {[
-          { name: "Telegram", status: "Connected", description: "Receive tasks from Telegram bot" },
-          { name: "Supabase", status: "Not configured", description: "Backend database and auth" },
-          { name: "Stripe", status: "Coming soon", description: "Payment processing" },
-        ].map((integration) => (
+        <TelegramIntegrationCard />
+        {otherIntegrations.map((integration) => (
           <div key={integration.name} className="flex items-center justify-between border rounded-lg p-4">
             <div>
               <p className="font-medium">{integration.name}</p>
               <p className="text-sm text-muted-foreground">{integration.description}</p>
             </div>
-            <Badge variant={integration.status === "Connected" ? "default" : "secondary"}>
+            <Badge variant="secondary">
               {integration.status}
             </Badge>
           </div>

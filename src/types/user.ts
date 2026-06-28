@@ -19,6 +19,7 @@ export type User = {
   avatarUrl?: string;
   role: UserRole;
   teamRole?: TeamRole;
+  telegramUsername?: string;
   createdAt: string;
 };
 

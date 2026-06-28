@@ -1,4 +1,5 @@
 import { withNormalizedAssignees } from "@/lib/assignee";
+import { buildTaskNotifyContext } from "@/lib/task-notify-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tasksService } from "@/services";
 import { queryKeys } from "@/lib/query-keys";
@@ -21,14 +22,23 @@ export function useTasks(boardId: string) {
   });
 }
 
-export function useCreateTask(boardId: string) {
+export function useCreateTask(boardId: string, boardTitle?: string) {
   const queryClient = useQueryClient();
   const addTask = useTaskStore((s) => s.addTask);
   const updateTask = useTaskStore((s) => s.updateTask);
 
   return useMutation({
-    mutationFn: async (input: Omit<CreateTaskInput, "boardId">) => {
-      const result = await tasksService.create({ ...input, boardId });
+    mutationFn: async (input: Omit<CreateTaskInput, "boardId" | "notifyContext">) => {
+      const notifyContext = buildTaskNotifyContext(
+        boardId,
+        boardTitle,
+        input.assigneeId,
+      );
+      const result = await tasksService.create({
+        ...input,
+        boardId,
+        notifyContext,
+      });
       if (result.error || !result.data) throw new Error(result.error ?? "Failed to create task");
       return result.data;
     },

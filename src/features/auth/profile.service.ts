@@ -12,6 +12,7 @@ const profileRowSchema = z.object({
   avatar_url: z.string().nullable().optional(),
   role: z.enum(["owner", "admin", "member"]),
   team_role: teamRoleSchema.nullable().optional(),
+  telegram_username: z.string().nullable().optional(),
   created_at: z.string(),
 });
 
@@ -22,6 +23,7 @@ export type Profile = {
   avatarUrl?: string;
   role: UserRole;
   teamRole?: TeamRole;
+  telegramUsername?: string;
   createdAt: string;
 };
 
@@ -32,6 +34,13 @@ type UpsertProfileInput = {
   avatarUrl?: string;
   role?: UserRole;
   teamRole?: TeamRole;
+  telegramUsername?: string | null;
+};
+
+export type UpdateProfileFieldsInput = {
+  name?: string;
+  teamRole?: TeamRole;
+  telegramUsername?: string | null;
 };
 
 function mapProfile(row: z.infer<typeof profileRowSchema>): Profile {
@@ -42,8 +51,21 @@ function mapProfile(row: z.infer<typeof profileRowSchema>): Profile {
     avatarUrl: row.avatar_url ?? undefined,
     role: row.role,
     teamRole: row.team_role ?? undefined,
+    telegramUsername: row.telegram_username ?? undefined,
     createdAt: row.created_at,
   };
+}
+
+function mapProfileUpdateError(error: { code?: string; message?: string }): Error {
+  if (error.code === "23505") {
+    return new Error("This Telegram username is already taken");
+  }
+
+  if (error.code === "23514") {
+    return new Error("Invalid Telegram username format");
+  }
+
+  return new Error(error.message || "Failed to update profile");
 }
 
 export const profileService = {
@@ -89,6 +111,10 @@ export const profileService = {
       row.team_role = input.teamRole;
     }
 
+    if (input.telegramUsername !== undefined) {
+      row.telegram_username = input.telegramUsername;
+    }
+
     const { data, error } = await client
       .from("profiles")
       .upsert(row, { onConflict: "id" })
@@ -101,6 +127,56 @@ export const profileService = {
 
     if (!data) {
       throw new Error("Failed to save user profile");
+    }
+
+    const parsed = profileRowSchema.safeParse(data);
+    if (!parsed.success) {
+      throw new Error("Invalid profile data received from database");
+    }
+
+    return mapProfile(parsed.data);
+  },
+
+  async updateProfileFields(
+    userId: string,
+    fields: UpdateProfileFieldsInput,
+  ): Promise<Profile> {
+    const client = getSupabaseClient();
+    if (!client) {
+      throw new Error("Supabase client is not available");
+    }
+
+    const row: Record<string, string | null> = {};
+
+    if (fields.name !== undefined) {
+      row.name = fields.name;
+    }
+
+    if (fields.teamRole !== undefined) {
+      row.team_role = fields.teamRole;
+    }
+
+    if (fields.telegramUsername !== undefined) {
+      row.telegram_username = fields.telegramUsername;
+    }
+
+    if (Object.keys(row).length === 0) {
+      throw new Error("No fields to update");
+    }
+
+    const { data, error } = await client
+      .from("profiles")
+      .update(row)
+      .eq("id", userId)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw mapProfileUpdateError(error);
+    }
+
+    if (!data) {
+      throw new Error("Failed to update profile");
     }
 
     const parsed = profileRowSchema.safeParse(data);

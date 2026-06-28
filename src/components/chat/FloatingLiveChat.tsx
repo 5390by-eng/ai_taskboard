@@ -10,10 +10,11 @@ import { cn } from "@/lib/utils";
 
 type FloatingLiveChatProps = {
   boardId: string;
+  boardTitle?: string;
   members?: Profile[];
 };
 
-export function FloatingLiveChat({ boardId, members = [] }: FloatingLiveChatProps) {
+export function FloatingLiveChat({ boardId, boardTitle, members = [] }: FloatingLiveChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -27,7 +28,7 @@ export function FloatingLiveChat({ boardId, members = [] }: FloatingLiveChatProp
     removePreviewTask,
     clearPreview,
     regenerate,
-  } = useBoardTaskPrompt(boardId);
+  } = useBoardTaskPrompt(boardId, boardTitle);
 
   const isGenerating = generateMutation.isPending;
   const isCreating = confirmMutation.isPending;

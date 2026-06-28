@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { withNormalizedAssignees } from "@/lib/assignee";
+import { buildTaskNotifyContext } from "@/lib/task-notify-context";
 import { queryKeys } from "@/lib/query-keys";
 import { aiService, tasksService, chatService } from "@/services";
 import { useTaskStore } from "@/stores";
 import type { GeneratedTaskPreview } from "@/types";
 import { toast } from "sonner";
 
-export function useAiTaskGenerator(boardId?: string) {
+export function useAiTaskGenerator(boardId?: string, boardTitle?: string) {
   const [preview, setPreview] = useState<GeneratedTaskPreview[]>([]);
 
   const generateMutation = useMutation({
@@ -31,16 +32,22 @@ export function useAiTaskGenerator(boardId?: string) {
     mutationFn: async (tasks: GeneratedTaskPreview[]) => {
       const targetBoardId = boardId ?? "board_1";
       const results = await Promise.all(
-        tasks.map((t) =>
-          tasksService.create({
+        tasks.map((t) => {
+          const notifyContext = buildTaskNotifyContext(
+            targetBoardId,
+            boardTitle,
+            t.assigneeId,
+          );
+          return tasksService.create({
             boardId: targetBoardId,
             title: t.title,
             description: t.description,
             priority: t.priority,
             assigneeId: t.assigneeId,
             status: t.suggestedStatus,
-          }),
-        ),
+            notifyContext,
+          });
+        }),
       );
       const failed = results.find((r) => r.error);
       if (failed?.error) throw new Error(failed.error);
@@ -77,7 +84,7 @@ export function useAiTaskGenerator(boardId?: string) {
   };
 }
 
-export function useBoardTaskPrompt(boardId: string) {
+export function useBoardTaskPrompt(boardId: string, boardTitle?: string) {
   const queryClient = useQueryClient();
   const addTask = useTaskStore((s) => s.addTask);
   const updateTask = useTaskStore((s) => s.updateTask);
@@ -104,16 +111,18 @@ export function useBoardTaskPrompt(boardId: string) {
   const confirmMutation = useMutation({
     mutationFn: async (tasks: GeneratedTaskPreview[]) => {
       const results = await Promise.all(
-        tasks.map((task) =>
-          tasksService.create({
+        tasks.map((task) => {
+          const notifyContext = buildTaskNotifyContext(boardId, boardTitle, task.assigneeId);
+          return tasksService.create({
             boardId,
             title: task.title,
             description: task.description,
             priority: task.priority,
             assigneeId: task.assigneeId,
             status: task.suggestedStatus,
-          }),
-        ),
+            notifyContext,
+          });
+        }),
       );
       const failed = results.find((result) => result.error);
       if (failed?.error) throw new Error(failed.error);

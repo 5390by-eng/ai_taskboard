@@ -31,8 +31,31 @@ export const userSchema = z.object({
   avatarUrl: z.string().optional(),
   role: z.enum(["owner", "admin", "member"]),
   teamRole: teamRoleSchema.optional(),
+  telegramUsername: z.string().optional(),
   createdAt: z.string(),
 });
+
+export const settingsProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  teamRole: z
+    .union([teamRoleSchema, z.literal("")])
+    .refine((value) => value !== "", {
+      message: "Please select your team role",
+    }),
+});
+
+export const telegramUsernameSchema = z
+  .string()
+  .trim()
+  .min(1, "Telegram username is required")
+  .transform((value) => value.replace(/^@/, ""))
+  .refine(
+    (value) => /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(value),
+    {
+      message: "Use 5–32 characters: letters, numbers, underscore; must start with a letter",
+    },
+  );
 
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -114,3 +137,5 @@ export type CreateTaskFormValues = z.infer<typeof createTaskSchema>;
 export type UpdateTaskLocalFormValues = z.infer<typeof updateTaskLocalSchema>;
 export type CreateBoardFormValues = z.infer<typeof createBoardSchema>;
 export type AiGenerateFormValues = z.infer<typeof aiGenerateSchema>;
+export type SettingsProfileFormInput = z.input<typeof settingsProfileSchema>;
+export type SettingsProfileFormValues = z.output<typeof settingsProfileSchema>;

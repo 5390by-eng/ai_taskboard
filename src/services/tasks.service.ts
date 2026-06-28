@@ -10,6 +10,7 @@ import { taskSchema } from "@/lib/validators";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 import { SUPABASE_CONFIG_MESSAGE } from "@/lib/env";
 import { failure, success } from "@/types/api";
+import { taskNotifyService } from "./task-notify.service";
 
 const taskRowSchema = z.object({
   id: z.string(),
@@ -94,6 +95,25 @@ function buildUpdatePayload(input: UpdateTaskInput): Record<string, unknown> {
   }
 
   return payload;
+}
+
+async function sendTaskCreatedNotification(
+  input: CreateTaskInput,
+): Promise<void> {
+  const { notifyContext } = input;
+  if (!notifyContext) {
+    return;
+  }
+
+  const result = await taskNotifyService.notifyTaskCreated({
+    userId: notifyContext.userId,
+    task: input.title.trim(),
+    boardTitle: notifyContext.boardTitle,
+  });
+
+  if (result.error) {
+    console.warn("[task-notify]", result.error);
+  }
 }
 
 export const tasksService = {
@@ -187,7 +207,9 @@ export const tasksService = {
     }
 
     try {
-      return success(mapTaskRow(parsed.data));
+      const task = mapTaskRow(parsed.data);
+      await sendTaskCreatedNotification(input);
+      return success(task);
     } catch (mappingError) {
       const message =
         mappingError instanceof Error ? mappingError.message : "Invalid task data";

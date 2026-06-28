@@ -28,6 +28,11 @@ export function buildAuthUser(
   const metadataAvatarUrl =
     typeof metadata.avatar_url === "string" ? metadata.avatar_url : undefined;
 
+  const metadataTelegramUsername =
+    typeof metadata.telegram_username === "string" && metadata.telegram_username.length > 0
+      ? metadata.telegram_username.replace(/^@/, "")
+      : undefined;
+
   const email = profile?.email ?? supabaseUser.email ?? "";
   const name =
     profile?.name ??
@@ -42,6 +47,7 @@ export function buildAuthUser(
     avatarUrl: profile?.avatarUrl ?? metadataAvatarUrl,
     role: profile?.role ?? "member",
     teamRole: profile?.teamRole,
+    telegramUsername: profile?.telegramUsername ?? metadataTelegramUsername,
     createdAt: profile?.createdAt ?? supabaseUser.created_at,
   };
 

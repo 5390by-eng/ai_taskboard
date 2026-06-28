@@ -23,6 +23,11 @@ export type UpdateTaskLocalInput = Partial<
   Pick<Task, "title" | "priority" | "assigneeIds">
 >;
 
+export type CreateTaskNotifyContext = {
+  userId: string;
+  boardTitle?: string;
+};
+
 export type CreateTaskInput = {
   boardId: string;
   title: string;
@@ -30,6 +35,7 @@ export type CreateTaskInput = {
   status?: TaskStatus;
   priority: TaskPriority;
   assigneeId?: string;
+  notifyContext?: CreateTaskNotifyContext;
 };
 
 export type UpdateTaskInput = Partial<

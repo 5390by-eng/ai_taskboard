@@ -35,9 +35,9 @@ export function BoardDetailsPage() {
   } = useBoardMembers(id);
   const members = membersData ?? EMPTY_MEMBERS;
   const { isLoading: tasksLoading, isError: tasksError } = useTasks(id);
-  const createTask = useCreateTask(id);
+  const createTask = useCreateTask(id, board?.title);
   const moveTask = useMoveTask(id);
-  const localUpdateTask = useLocalUpdateTask(id);
+  const localUpdateTask = useLocalUpdateTask(id, board?.title);
   const localDeleteTask = useLocalDeleteTask(id);
   const tasks = useTaskStore((s) => s.tasksByBoard[id] ?? EMPTY_TASKS);
 
@@ -120,7 +120,7 @@ export function BoardDetailsPage() {
         isDeleting={localDeleteTask.isPending}
       />
 
-      <FloatingLiveChat boardId={id} members={members} />
+      <FloatingLiveChat boardId={id} boardTitle={board.title} members={members} />
     </div>
   );
 }

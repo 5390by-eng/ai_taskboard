@@ -1,5 +1,6 @@
 export { authService } from "./auth.service";
 export { boardsService } from "./boards.service";
+export { taskNotifyService } from "./task-notify.service";
 export { tasksService } from "./tasks.service";
 export { aiService } from "./ai.service";
 export { telegramService } from "./telegram.service";
