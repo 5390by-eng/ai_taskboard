@@ -72,9 +72,73 @@ src/
 └── routes/        Router config
 ```
 
+## E2E Tests (Playwright)
+
+```bash
+npx playwright install chromium
+cp .env.e2e.example .env.e2e
+# fill VITE_SUPABASE_*, E2E_LOGIN_EMAIL, E2E_LOGIN_PASSWORD
+npm run test:e2e:ui
+```
+
+Auth-only specs (registration, login, password reset, navigation, validation):
+
+```bash
+npm run test:e2e:auth:ui
+```
+
+Extended specs (AI, Telegram, Billing, sidebar navigation):
+
+```bash
+npm run test:e2e:extended:ui
+```
+
+Core specs (dashboard, boards, board details, settings):
+
+```bash
+npm run test:e2e:core:ui
+```
+
+See [.env.e2e.example](.env.e2e.example) for required environment variables.
+
+## CI (GitHub Actions)
+
+E2E tests run automatically on every push to `main`/`master` and on pull requests via [`.github/workflows/e2e.yml`](.github/workflows/e2e.yml).
+
+### Required GitHub Secrets
+
+In the repository: **Settings → Secrets and variables → Actions → New repository secret**.
+
+| Secret | Description |
+|--------|-------------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon (public) key |
+| `E2E_LOGIN_EMAIL` | Confirmed test user email |
+| `E2E_LOGIN_PASSWORD` | Password for the test user |
+
+Use a dedicated Supabase test account that is already confirmed and stable across runs.
+
+### What runs in CI
+
+```bash
+npm ci
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+If tests fail, the workflow uploads `playwright-report` and `test-results` artifacts (traces, screenshots) for debugging.
+
 ## Scripts
 
 - `npm run dev` — Start dev server
 - `npm run build` — Production build
 - `npm run preview` — Preview production build
 - `npm run lint` — Run ESLint
+- `npm run test:e2e` — Run all Playwright tests (72 specs, headless)
+- `npm run test:e2e:ui` — Run Playwright tests in UI mode
+- `npm run test:e2e:auth` — Auth e2e (login, register, validation, password, navigation)
+- `npm run test:e2e:auth:ui` — Auth e2e in UI mode
+- `npm run test:e2e:core` — Core app e2e (dashboard, boards, board details, settings)
+- `npm run test:e2e:core:ui` — Core app e2e in UI mode
+- `npm run test:e2e:extended` — Extended e2e (AI, Telegram, Billing, navigation)
+- `npm run test:e2e:extended:ui` — Extended e2e in UI mode

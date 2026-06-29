@@ -10,7 +10,16 @@
     "preview": "vite preview",
     "supabase:link": "supabase link --project-ref emxbtdkipymhqyoxczpx",
     "supabase:push": "supabase db push --linked",
-    "supabase:migrations": "supabase migration list --linked"
+    "supabase:migrations": "supabase migration list --linked",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:core": "playwright test e2e/dashboard.smoke.spec.ts e2e/dashboard.exceptions.spec.ts e2e/boards.smoke.spec.ts e2e/boards.validation.spec.ts e2e/board-details.smoke.spec.ts e2e/board-details.validation.spec.ts e2e/board-details.extended.spec.ts e2e/settings.smoke.spec.ts e2e/settings.validation.spec.ts",
+    "test:e2e:core:ui": "playwright test e2e/dashboard.smoke.spec.ts e2e/dashboard.exceptions.spec.ts e2e/boards.smoke.spec.ts e2e/boards.validation.spec.ts e2e/board-details.smoke.spec.ts e2e/board-details.validation.spec.ts e2e/board-details.extended.spec.ts e2e/settings.smoke.spec.ts e2e/settings.validation.spec.ts --ui",
+    "test:e2e:extended": "playwright test e2e/auth.password.spec.ts e2e/auth.navigation.spec.ts e2e/navigation.smoke.spec.ts e2e/ai-generator.smoke.spec.ts e2e/ai-chat.smoke.spec.ts e2e/telegram.smoke.spec.ts e2e/billing.smoke.spec.ts",
+    "test:e2e:extended:ui": "playwright test e2e/auth.password.spec.ts e2e/auth.navigation.spec.ts e2e/navigation.smoke.spec.ts e2e/ai-generator.smoke.spec.ts e2e/ai-chat.smoke.spec.ts e2e/telegram.smoke.spec.ts e2e/billing.smoke.spec.ts --ui",
+    "test:e2e:auth": "playwright test e2e/auth.spec.ts e2e/auth.validation.spec.ts e2e/auth.password.spec.ts e2e/auth.navigation.spec.ts",
+    "test:e2e:auth:ui": "playwright test e2e/auth.spec.ts e2e/auth.validation.spec.ts e2e/auth.password.spec.ts e2e/auth.navigation.spec.ts --ui",
+    "test:e2e:headed": "playwright test --headed --workers=1"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -43,6 +52,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.1.7",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.5",

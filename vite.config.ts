@@ -14,6 +14,12 @@ export default defineConfig({
     },
   },
   server: {
+    watch: {
+      ignored: ["**/playwright-report/**", "**/test-results/**"],
+    },
+    hmr: {
+      overlay: false,
+    },
     proxy: {
       "/api": {
         target: backendTarget,
