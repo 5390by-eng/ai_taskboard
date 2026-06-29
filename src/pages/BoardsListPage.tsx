@@ -2,6 +2,8 @@ import { useState } from "react";
 import { LayoutGrid } from "lucide-react";
 import { useBoards, useCreateBoard } from "@/features/boards";
 import { useBoardMemberProfilesMap } from "@/features/boards";
+import { usePlanLimits } from "@/features/billing";
+import { PlanLimitNotice, UsageMeter } from "@/components/billing";
 import type { CreateBoardFormValues } from "@/lib/validators";
 import { BoardCard } from "@/components/board/BoardCard";
 import { CreateBoardCard } from "@/components/board/CreateBoardCard";
@@ -15,6 +17,17 @@ export function BoardsListPage() {
   const { profilesById } = useBoardMemberProfilesMap(boards);
   const createBoard = useCreateBoard();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const {
+    canCreateBoard,
+    boardLimitMessage,
+    boardsUsed,
+    limits,
+  } = usePlanLimits();
+
+  const handleOpenCreate = () => {
+    if (!canCreateBoard) return;
+    setDialogOpen(true);
+  };
 
   const handleCreateBoard = async (values: CreateBoardFormValues) => {
     await createBoard.mutateAsync({
@@ -34,13 +47,21 @@ export function BoardsListPage() {
         <p className="text-muted-foreground">Manage your project boards</p>
       </div>
 
+      {limits.boards < 999 && (
+        <UsageMeter label="Boards" used={boardsUsed} limit={limits.boards} />
+      )}
+
+      {!canCreateBoard && boardLimitMessage && (
+        <PlanLimitNotice message={boardLimitMessage} />
+      )}
+
       {boards && boards.length === 0 ? (
         <EmptyState
           icon={LayoutGrid}
           title="No boards yet"
           description="Create your first board to start organizing tasks"
-          actionLabel="Create Board"
-          onAction={() => setDialogOpen(true)}
+          actionLabel={canCreateBoard ? "Create Board" : "Board limit reached"}
+          onAction={canCreateBoard ? handleOpenCreate : undefined}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -52,7 +73,7 @@ export function BoardsListPage() {
 
             return <BoardCard key={board.id} board={board} members={members} />;
           })}
-          <CreateBoardCard onClick={() => setDialogOpen(true)} />
+          <CreateBoardCard onClick={handleOpenCreate} disabled={!canCreateBoard} />
         </div>
       )}
 

@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { PlanLimitNotice } from "@/components/billing";
 import { createTaskSchema, type CreateTaskFormValues } from "@/lib/validators";
 import type { AssigneeLookup } from "@/lib/assignee";
 import type { TaskPriority } from "@/types";
@@ -37,6 +38,8 @@ type CreateTaskModalProps = {
   members: AssigneeLookup[];
   membersLoading?: boolean;
   isLoading?: boolean;
+  canCreateTask?: boolean;
+  taskLimitMessage?: string | null;
 };
 
 export function CreateTaskModal({
@@ -46,6 +49,8 @@ export function CreateTaskModal({
   members,
   membersLoading = false,
   isLoading,
+  canCreateTask = true,
+  taskLimitMessage = null,
 }: CreateTaskModalProps) {
   const form = useForm<CreateTaskFormValues>({
     resolver: zodResolver(createTaskSchema),
@@ -69,6 +74,7 @@ export function CreateTaskModal({
   }, [open, form.reset]);
 
   const handleSubmit = (values: CreateTaskFormValues) => {
+    if (!canCreateTask) return;
     onSubmit({
       ...values,
       assigneeId: values.assigneeId || undefined,
@@ -85,6 +91,10 @@ export function CreateTaskModal({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {!canCreateTask && taskLimitMessage && (
+              <PlanLimitNotice message={taskLimitMessage} />
+            )}
+
             <FormField
               control={form.control}
               name="title"
@@ -175,7 +185,7 @@ export function CreateTaskModal({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !canCreateTask}>
                 {isLoading ? "Creating..." : "Create Task"}
               </Button>
             </DialogFooter>

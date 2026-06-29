@@ -52,6 +52,7 @@ export function useCreateBoard() {
     onSuccess: (board) => {
       addBoard(board);
       queryClient.invalidateQueries({ queryKey: queryKeys.boards.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.billing.usage() });
       toast.success("Board created");
     },
     onError: (error) => {

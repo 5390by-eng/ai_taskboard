@@ -6,6 +6,7 @@ import type {
 } from "@/types";
 import { generateMockTasksFromDescription } from "@/lib/mock-data/ai-responses";
 import { env } from "@/lib/env";
+import { getSupabaseClient } from "@/lib/supabase";
 import { generateId } from "@/lib/utils";
 import { delay } from "@/lib/utils";
 import { success, failure } from "@/types/api";
@@ -49,6 +50,28 @@ function buildChatApiUrl(): string {
   return base ? `${base}/api/chat` : "/api/chat";
 }
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error("Supabase is not configured");
+  }
+
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const accessToken = data.session?.access_token;
+  if (!accessToken) {
+    throw new Error("You must be signed in to use AI features");
+  }
+
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  };
+}
+
 export const aiService = {
   async generateTasksFromDescription(
     request: { projectDescription: string; boardId?: string },
@@ -72,16 +95,28 @@ export const aiService = {
     }
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(buildChatApiUrl(), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({ message: trimmedMessage, boardId }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        try {
+          const json: unknown = JSON.parse(errorText);
+          if (
+            typeof json === "object" &&
+            json !== null &&
+            "error" in json &&
+            typeof json.error === "string"
+          ) {
+            return failure(json.error);
+          }
+        } catch {
+          // fall through
+        }
         return failure(errorText || `Request failed with status ${response.status}`);
       }
 

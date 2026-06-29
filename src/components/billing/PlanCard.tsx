@@ -2,7 +2,6 @@ import type { PaymentPlan } from "@/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UpgradeButton } from "./UpgradeButton";
-import { cn } from "@/lib/utils";
 
 type PlanCardProps = {
   plan: PaymentPlan;
@@ -13,7 +12,7 @@ type PlanCardProps = {
 
 export function PlanCard({ plan, isCurrent, onUpgrade, isUpgrading }: PlanCardProps) {
   return (
-    <Card className={cn(isCurrent && "border-primary ring-1 ring-primary")}>
+    <Card className={isCurrent ? "border-primary ring-1 ring-primary" : undefined}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>{plan.name}</CardTitle>

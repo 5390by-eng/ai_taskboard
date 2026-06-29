@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useBoard } from "@/features/boards";
 import { useBoardMembers } from "@/features/users";
+import { usePlanLimits } from "@/features/billing";
+import { PlanLimitNotice } from "@/components/billing";
 import {
   useTasks,
   useCreateTask,
@@ -40,6 +42,7 @@ export function BoardDetailsPage() {
   const localUpdateTask = useLocalUpdateTask(id, board?.title);
   const localDeleteTask = useLocalDeleteTask(id);
   const tasks = useTaskStore((s) => s.tasksByBoard[id] ?? EMPTY_TASKS);
+  const { canCreateTask, canUseAi, taskLimitMessage } = usePlanLimits();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -85,11 +88,15 @@ export function BoardDetailsPage() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <BoardHeader board={board} />
-        <Button onClick={() => setCreateOpen(true)}>
+        <Button onClick={() => setCreateOpen(true)} disabled={!canCreateTask}>
           <Plus />
           Add Task
         </Button>
       </div>
+
+      {!canCreateTask && taskLimitMessage && (
+        <PlanLimitNotice message={taskLimitMessage} />
+      )}
 
       <BoardMembers members={members} isLoading={membersLoading} isError={membersError} />
 
@@ -107,6 +114,8 @@ export function BoardDetailsPage() {
         members={members}
         membersLoading={membersLoading}
         isLoading={createTask.isPending}
+        canCreateTask={canCreateTask}
+        taskLimitMessage={taskLimitMessage}
       />
 
       <TaskDetailsPanel
@@ -120,7 +129,9 @@ export function BoardDetailsPage() {
         isDeleting={localDeleteTask.isPending}
       />
 
-      <FloatingLiveChat boardId={id} boardTitle={board.title} members={members} />
+      {canUseAi && (
+        <FloatingLiveChat boardId={id} boardTitle={board.title} members={members} />
+      )}
     </div>
   );
 }

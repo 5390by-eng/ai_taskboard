@@ -10,6 +10,8 @@ export const ROUTES = {
   aiChat: "/ai-chat",
   telegram: "/telegram",
   billing: "/billing",
+  billingSuccess: "/billing/success",
+  billingCancel: "/billing/cancel",
   settings: "/settings",
 } as const;
 
@@ -36,6 +38,9 @@ export const STATUS_LABELS = {
 } as const;
 
 export const APP_NAME = "AI Task Board";
+
+export const BILLING_POST_CHECKOUT_SYNC_KEY = "billing-post-checkout-sync";
+export const BILLING_POST_CHECKOUT_SYNC_WINDOW_MS = 2 * 60 * 1000;
 
 export const TEAM_ROLE_LABELS = {
   frontend: "Frontend Developer",

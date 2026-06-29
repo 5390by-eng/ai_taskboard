@@ -9,6 +9,7 @@ export { AiTaskGeneratorPage } from "./AiTaskGeneratorPage";
 export { AiAssistantPage } from "./AiAssistantPage";
 export { TelegramInboxPage } from "./TelegramInboxPage";
 export { BillingPage } from "./BillingPage";
+export { BillingSuccessPage, BillingCancelPage } from "./BillingResultPages";
 export {
   SettingsProfilePage,
   SettingsTeamPage,

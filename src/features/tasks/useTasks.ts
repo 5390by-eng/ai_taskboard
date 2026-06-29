@@ -55,6 +55,7 @@ export function useCreateTask(boardId: string, boardTitle?: string) {
         addTask(boardId, normalizedTask);
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.byBoard(boardId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.billing.usage() });
       toast.success("Task created");
     },
     onError: (error: Error) => {

@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createBoardSchema, type CreateBoardFormValues } from "@/lib/validators";
 import { useSearchProfilesByEmail } from "@/features/users";
+import { usePlanLimits } from "@/features/billing";
+import { PlanLimitNotice } from "@/components/billing";
 import type { Profile } from "@/features/auth/profile.service";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +53,16 @@ export function CreateBoardModal({
   const [emailQuery, setEmailQuery] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<Profile[]>([]);
   const { data: searchResults = [], isFetching, isError } = useSearchProfilesByEmail(emailQuery);
+  const {
+    canCreateBoard,
+    canAddTeamMember,
+    canSelectMoreMembers,
+    boardLimitMessage,
+    teamMemberLimitMessage,
+    teamMembersRemaining,
+    limits,
+    teamMembersUsed,
+  } = usePlanLimits();
 
   const form = useForm<CreateBoardFormValues>({
     resolver: zodResolver(createBoardSchema),
@@ -96,6 +108,10 @@ export function CreateBoardModal({
       return;
     }
 
+    if (!canSelectMoreMembers(selectedMemberIds.length + 1)) {
+      return;
+    }
+
     setSelectedMembers((current) => [...current, profile]);
     form.setValue("memberIds", [...selectedMemberIds, profile.id], {
       shouldValidate: true,
@@ -120,6 +136,10 @@ export function CreateBoardModal({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {!canCreateBoard && boardLimitMessage && (
+              <PlanLimitNotice message={boardLimitMessage} />
+            )}
+
             <FormField
               control={form.control}
               name="title"
@@ -143,7 +163,18 @@ export function CreateBoardModal({
                   <p className="text-xs text-muted-foreground">
                     Search registered users by email. You will be added as the board owner
                     automatically.
+                    {limits.teamMembers < 999 && (
+                      <>
+                        {" "}
+                        Team members: {teamMembersUsed} / {limits.teamMembers}
+                        {teamMembersRemaining > 0 && ` (${teamMembersRemaining} remaining)`}.
+                      </>
+                    )}
                   </p>
+
+                  {!canSelectMoreMembers(selectedMemberIds.length) && teamMemberLimitMessage && (
+                    <PlanLimitNotice message={teamMemberLimitMessage} />
+                  )}
 
                   {selectedMembers.length > 0 && (
                     <div className="flex flex-wrap gap-2">
@@ -173,6 +204,9 @@ export function CreateBoardModal({
                       onChange={(event) => setEmailQuery(event.target.value)}
                       placeholder="Search by email"
                       autoComplete="off"
+                      disabled={
+                        !canAddTeamMember || !canSelectMoreMembers(selectedMemberIds.length + 1)
+                      }
                     />
                   </FormControl>
 
@@ -197,8 +231,9 @@ export function CreateBoardModal({
                             key={profile.id}
                             type="button"
                             onClick={() => addMember(profile)}
+                            disabled={!canSelectMoreMembers(selectedMemberIds.length + 1)}
                             className={cn(
-                              "flex w-full items-center gap-3 rounded-md p-2 text-left hover:bg-muted/50",
+                              "flex w-full items-center gap-3 rounded-md p-2 text-left hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50",
                             )}
                           >
                             <Avatar className="h-8 w-8">
@@ -238,7 +273,7 @@ export function CreateBoardModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !canCreateBoard}>
                 {isLoading ? "Creating..." : "Create Board"}
               </Button>
             </DialogFooter>

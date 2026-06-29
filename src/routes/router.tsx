@@ -15,6 +15,8 @@ import {
   AiAssistantPage,
   TelegramInboxPage,
   BillingPage,
+  BillingSuccessPage,
+  BillingCancelPage,
   SettingsProfilePage,
   SettingsTeamPage,
   SettingsNotificationsPage,
@@ -49,6 +51,8 @@ export const router = createBrowserRouter([
       { path: ROUTES.aiChat, element: <AiAssistantPage /> },
       { path: ROUTES.telegram, element: <TelegramInboxPage /> },
       { path: ROUTES.billing, element: <BillingPage /> },
+      { path: ROUTES.billingSuccess, element: <BillingSuccessPage /> },
+      { path: ROUTES.billingCancel, element: <BillingCancelPage /> },
       {
         path: ROUTES.settings,
         element: <SettingsLayout />,

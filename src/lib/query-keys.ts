@@ -1,3 +1,5 @@
+import type { PaymentPlanId } from "@/types";
+
 export const queryKeys = {
   auth: {
     session: ["auth", "session"] as const,
@@ -12,7 +14,7 @@ export const queryKeys = {
   },
   billing: {
     subscription: ["billing", "subscription"] as const,
-    usage: ["billing", "usage"] as const,
+    usage: (planId?: PaymentPlanId) => ["billing", "usage", planId ?? "current"] as const,
     plans: ["billing", "plans"] as const,
   },
   telegram: {

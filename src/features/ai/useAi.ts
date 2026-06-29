@@ -7,6 +7,7 @@ import { aiService, tasksService, chatService } from "@/services";
 import { useTaskStore } from "@/stores";
 import type { GeneratedTaskPreview } from "@/types";
 import { toast } from "sonner";
+import { useRefreshBilling } from "@/features/billing";
 
 export function useAiTaskGenerator(boardId?: string, boardTitle?: string) {
   const [preview, setPreview] = useState<GeneratedTaskPreview[]>([]);
@@ -86,6 +87,7 @@ export function useAiTaskGenerator(boardId?: string, boardTitle?: string) {
 
 export function useBoardTaskPrompt(boardId: string, boardTitle?: string) {
   const queryClient = useQueryClient();
+  const refreshBilling = useRefreshBilling();
   const addTask = useTaskStore((s) => s.addTask);
   const updateTask = useTaskStore((s) => s.updateTask);
   const [preview, setPreview] = useState<GeneratedTaskPreview[]>([]);
@@ -102,6 +104,7 @@ export function useBoardTaskPrompt(boardId: string, boardTitle?: string) {
     onSuccess: ({ tasks, message }) => {
       setPreview(tasks);
       setLastPrompt(message);
+      void refreshBilling();
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -145,6 +148,8 @@ export function useBoardTaskPrompt(boardId: string, boardTitle?: string) {
       });
 
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.byBoard(boardId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.billing.usage() });
+      void refreshBilling();
       setPreview([]);
       setLastPrompt("");
       toast.success("Tasks created successfully");

@@ -13,11 +13,11 @@ export function UpgradeButton({ onClick, isLoading, planName }: UpgradeButtonPro
       {isLoading ? (
         <>
           <Loader2 className="animate-spin" />
-          Upgrading...
+          Redirecting to checkout...
         </>
       ) : (
         <>
-          Upgrade to {planName}
+          Continue to {planName}
           <ArrowUpRight />
         </>
       )}

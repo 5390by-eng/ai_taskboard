@@ -26,4 +26,17 @@ export type UsageStats = {
   tasksUsed: number;
   aiRequestsUsed: number;
   teamMembersUsed: number;
+  aiRequestsPlanLimit: number;
+  aiCreditsBalance: number;
+  aiRequestsEffectiveLimit: number;
+  aiRequestsRemaining: number;
 };
+
+export const AI_REQUEST_PRICE_USD = 0.5;
+
+export function calculateAiCreditsFromAmountUsd(amountUsd: number): number {
+  if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
+    return 0;
+  }
+  return Math.floor(amountUsd / AI_REQUEST_PRICE_USD);
+}
